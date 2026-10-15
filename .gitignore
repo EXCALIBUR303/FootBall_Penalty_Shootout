@@ -1,0 +1,7 @@
+node_modules
+dist
+assets/raw
+.DS_Store
+public/assets/models/Fox.glb
+public/assets/models/CesiumMan.glb
+docs/phase1-smoke.png

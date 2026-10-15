@@ -1,0 +1,12 @@
+#loading {
+  position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: var(--sp-4);
+  background: radial-gradient(ellipse at 50% 40%, var(--panel), var(--bg) 70%);
+  padding: var(--sp-5);
+  transition: opacity var(--dur-screen) var(--ease), visibility var(--dur-screen);
+}
+#loading.is-done { opacity: 0; visibility: hidden; pointer-events: none; }
+.loading__title { margin: 0; font-size: var(--fs-5); letter-spacing: 0.04em; text-transform: uppercase; }
+.loading__bar { width: min(420px, 80vw); height: 10px; border-radius: 999px; background: var(--line); overflow: hidden; }
+.loading__fill { height: 100%; width: 0%; background: var(--accent); border-radius: inherit; transition: width var(--dur-micro) linear; }
+.loading__label { margin: 0; color: var(--text-muted); font-size: var(--fs-0); font-variant-numeric: tabular-nums; }
+.loading__error { margin: 0; max-width: 60ch; color: var(--danger); font-size: var(--fs-0); white-space: pre-line; text-align: center; }

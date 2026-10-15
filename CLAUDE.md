@@ -67,5 +67,13 @@ what was tested, decisions needed).
 
 ## Working notes
 
+- Commands: `npm run dev`, `npm run build`, `npm run assets` (optimise assets/raw -> public/assets/models),
+  `npm run assets:test` (adds the Khronos smoke-test models). Test via `/?test=1`.
+- Smoke test: `NODE_PATH=$(npm root -g) CHROMIUM_PATH=/opt/pw-browsers/chromium node scripts/smoke-test.mjs`
+  (Playwright is preinstalled globally; it is not a project dependency.)
+- Pitch space: goal line z=0, goal faces +z, penalty spot z=11, y up (see src/assets/manifest.js).
+- Approved decisions: Rapier, vanilla JS, no Sketchfab/Freesound, keyframed missing clips, Kenney Fonts,
+  textured pitch plane only if the stadium has none.
+
 - Phase 0 plan lives in `docs/PLAN.md`.
 - Git branch for development: `claude/3d-football-penalty-shootout-q6sult`.

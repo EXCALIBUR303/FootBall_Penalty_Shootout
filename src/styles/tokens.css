@@ -1,0 +1,37 @@
+/* Design tokens — see docs/PLAN.md §7. Contrast ratios were computed against --bg / --panel. */
+:root {
+  --bg: #0b1220;
+  --panel: #141e33;
+  --line: #2a3a55;
+  --text: #f4f7fb;
+  --text-muted: #a9b6cc;
+  --accent: #c6f432;
+  --gold: #ffc83d;
+  --danger: #ff6b6b;
+  --home: #5b9cff;
+  --away: #ff8a3d;
+  --success: #2ee6a8;
+
+  /* Major-third type scale, 16px base */
+  --fs--1: 0.8rem;
+  --fs-0: 1rem;
+  --fs-1: 1.25rem;
+  --fs-2: clamp(1.25rem, 1.1rem + 0.6vw, 1.56rem);
+  --fs-3: clamp(1.56rem, 1.3rem + 1vw, 1.95rem);
+  --fs-4: clamp(1.95rem, 1.5rem + 1.6vw, 2.44rem);
+  --fs-5: clamp(2.44rem, 1.7rem + 2.8vw, 3.05rem);
+
+  /* 4px spacing grid */
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px; --sp-7: 48px; --sp-8: 64px;
+  --radius-1: 10px; --radius-2: 16px;
+
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --dur-micro: 160ms;
+  --dur-screen: 280ms;
+
+  --font-ui: system-ui, 'Segoe UI', Roboto, sans-serif;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur-micro: 1ms; --dur-screen: 1ms; }
+}
