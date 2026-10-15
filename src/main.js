@@ -9,6 +9,7 @@ import { buildScene } from './world/scene.js';
 import { disposeTree } from './core/dispose.js';
 import { settings } from './core/settings.js';
 import { setQuality, preset } from './core/quality.js';
+import { createPost } from './core/post.js';
 import { createUI } from './ui/ui.js';
 import { createAudio } from './audio/audio.js';
 
@@ -44,7 +45,9 @@ async function boot() {
 
   const world = buildScene(renderer, assets);
   const { scene, camera } = world;
-  const resize = watchResize(renderer, camera, canvas);
+  let post = null; // created below; resize may fire first
+  const resize = watchResize(renderer, camera, canvas, () => post?.resize());
+  post = createPost(renderer, scene, camera);
   const playable = world.keeper && world.striker && world.ball;
 
   // --- App state: menu (orbiting camera) or a match --------------------------------------------
@@ -95,6 +98,7 @@ async function boot() {
       if (k === 'quality') {
         setQuality(v);
         resize.apply(); // devicePixelRatio cap
+        post.apply(); // bloom on/off
         const size = preset(v).shadowMap;
         world.sun.shadow.mapSize.set(size, size);
         world.sun.shadow.map?.dispose(); // re-allocated at the new size on the next frame
@@ -125,7 +129,7 @@ async function boot() {
       world.striker?.update(dt);
       if (!params.has('pose')) orbit(dt);
     }
-    renderer.render(scene, camera);
+    post.render(dt);
   });
 
   // Slow broadcast-style orbit behind the menu (a static wide shot with reduced motion).
@@ -141,13 +145,14 @@ async function boot() {
   if (missing.length) loadingEl.classList.remove('is-done');
 
   // Handy for Playwright and the console during development only.
-  function expose() { if (import.meta.env.DEV) window.__game = { renderer, world, game, ui, assets, missing, settings, audio }; }
+  function expose() { if (import.meta.env.DEV) window.__game = { renderer, world, game, ui, assets, missing, settings, audio, post }; }
   expose();
 
   // Release GPU memory on page unload.
   window.addEventListener('pagehide', () => {
     renderer.setAnimationLoop(null);
     resize.dispose();
+    post.dispose();
     game?.dispose();
     audio.dispose();
     disposeTree(scene);

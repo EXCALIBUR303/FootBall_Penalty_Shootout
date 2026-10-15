@@ -12,13 +12,14 @@ export function createRenderer(canvas) {
 }
 
 /** Keeps drawing buffer, camera aspect and devicePixelRatio in sync with the window. */
-export function watchResize(renderer, camera, canvas) {
+export function watchResize(renderer, camera, canvas, onResize = () => {}) {
   const apply = () => {
     const { maxDpr } = preset();
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, maxDpr));
     renderer.setSize(window.innerWidth, window.innerHeight, false);
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
+    onResize();
   };
   apply();
   window.addEventListener('resize', apply);
