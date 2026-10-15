@@ -193,4 +193,37 @@ export const KICK = {
   ],
 };
 
-export const AUTHORED = [READY, DIVE_LOW, DIVE_HIGH, BLOCK, JUMP, KICK];
+// Striker celebration: both arms thrust up in a V, chest out, a little pump. Loops.
+const cheer = (pump) => ({
+  spine_01: [['x', -7]],
+  spine_02: [['x', -4]],
+  neck_01: [['x', -12]],
+  upperarm_l: [['z', 62 + pump], ['y', -10]], // arms up in a V (90 would be straight up)
+  upperarm_r: [['z', -(62 + pump)], ['y', 10]],
+  lowerarm_l: [['z', 14]],
+  lowerarm_r: [['z', -14]],
+});
+export const CELEBRATE = {
+  name: 'ST_Celebrate',
+  duration: 0.8,
+  keys: [{ t: 0, pose: cheer(0) }, { t: 0.4, pose: cheer(12) }, { t: 0.8, pose: cheer(0) }],
+};
+
+// Striker after a miss or save: slumped — arms hanging, shoulders rounded, head bowed, a slow breath. Loops.
+const dejected = (breath) => ({
+  spine_01: [['x', 9 + breath]],
+  spine_02: [['x', 5]],
+  spine_03: [['x', 4]],
+  neck_01: [['x', 26 + breath * 2]],
+  upperarm_l: [['z', -70], ['y', -6]],
+  upperarm_r: [['z', 70], ['y', 6]],
+  lowerarm_l: [['y', -12]],
+  lowerarm_r: [['y', 12]],
+});
+export const DEJECTED = {
+  name: 'ST_Dejected',
+  duration: 2.4,
+  keys: [{ t: 0, pose: dejected(0) }, { t: 1.2, pose: dejected(3) }, { t: 2.4, pose: dejected(0) }],
+};
+
+export const AUTHORED = [READY, DIVE_LOW, DIVE_HIGH, BLOCK, JUMP, KICK, CELEBRATE, DEJECTED];

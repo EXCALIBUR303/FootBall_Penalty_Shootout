@@ -79,7 +79,8 @@ export class Striker {
   }
 
   react(kind) {
-    if (kind === 'celebrate') this.play('Dance_Loop', true, 0.3);
-    else if (kind === 'dejected') this.play('Crouch_Idle_Loop', true, 0.4);
+    // Authored football reactions (see clips.js); fall back to library clips if a rig lacks them.
+    if (kind === 'celebrate') this.play(this.actions.has('ST_Celebrate') ? 'ST_Celebrate' : 'Dance_Loop', true, 0.3);
+    else if (kind === 'dejected') this.play(this.actions.has('ST_Dejected') ? 'ST_Dejected' : 'Crouch_Idle_Loop', true, 0.5);
   }
 }

@@ -77,7 +77,12 @@ export class Keeper {
 
   /** Celebrate a save / react to a goal. Uses library clips when present. */
   react(kind) {
-    if (kind === 'celebrate' && this.actions.has('Dance_Loop')) this.play('Dance_Loop', { loop: true, fade: 0.3 });
+    // After a full-length dive the keeper is lying on the grass (root motion), so only a standing save
+    // (block, jump) gets the arms-up celebration.
+    const grounded = this.state && (this.state.kind === 'low' || this.state.kind === 'high');
+    if (kind === 'celebrate' && !grounded && this.actions.has('ST_Celebrate')) {
+      this.play('ST_Celebrate', { loop: true, fade: 0.3 });
+    }
   }
 
   play(name, { loop, fade = 0.2, timeScale = 1 }) {
