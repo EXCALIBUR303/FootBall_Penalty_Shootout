@@ -123,6 +123,7 @@ export async function createMatch({ world, canvas, params, options = {}, setting
     hud.reticle(null);
     director.cut(SHOTS.runUp(SPOT));
     striker.runUp(SPOT, strike, 0.95);
+    onEvent('whistle', {});
   }
 
   /** Boot meets ball. */
@@ -132,6 +133,7 @@ export async function createMatch({ world, canvas, params, options = {}, setting
     physics.kick(velocity, spin);
     kick.shot = shot;
     kick.launch = { position: SPOT.clone(), velocity, spin };
+    onEvent('strike', { power: shot.power, x: shot.target.x });
     setPhase('flight');
     director.cut(SHOTS.follow(() => ball.position));
 
@@ -184,13 +186,13 @@ export async function createMatch({ world, canvas, params, options = {}, setting
     if (e.type === 'post' || e.type === 'bar') {
       kick.woodwork = true;
       director.addShake(0.06);
-      onEvent('woodwork', { speed: e.speed });
+      onEvent('woodwork', { type: e.type, speed: e.speed, x: ball.position.x });
     } else if (e.type === 'keeper' && !kick.touchedKeeper) {
       kick.touchedKeeper = true;
       // Clean contact on a slower ball = catch and hold; otherwise the physics parries it.
       const catchBelow = kick.keeperHuman ? DIFFICULTY.normal.catchBelow : ai.catchBelow;
       if (e.speed < catchBelow) kick.held = true;
-      onEvent('keeper-touch', { held: kick.held, speed: e.speed });
+      onEvent('keeper-touch', { held: kick.held, speed: e.speed, x: ball.position.x });
     } else if (e.type === 'net') {
       onEvent('net', { speed: e.speed });
     }
@@ -281,6 +283,7 @@ export async function createMatch({ world, canvas, params, options = {}, setting
     } else if (phase === 'keeper' && phaseT > 1.4 && !striker.run) {
       striker.runUp(SPOT, strike, 1.0);
       setPhase('runup');
+      onEvent('whistle', {});
     }
   }
 

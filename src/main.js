@@ -10,6 +10,7 @@ import { disposeTree } from './core/dispose.js';
 import { settings } from './core/settings.js';
 import { setQuality, preset } from './core/quality.js';
 import { createUI } from './ui/ui.js';
+import { createAudio } from './audio/audio.js';
 
 const loadingEl = document.getElementById('loading');
 const fillEl = loadingEl.querySelector('.loading__fill');
@@ -61,6 +62,7 @@ async function boot() {
     expose();
   }
   function endMatch() {
+    audio.crowd(0.3);
     game?.dispose();
     game = null;
     world.keeper.ready();
@@ -70,13 +72,23 @@ async function boot() {
     ui.showMenu();
     expose();
   }
+  const audio = createAudio(settings);
   function onEvent(type, data) {
+    audio.onMatchEvent(type, data);
     if (type === 'over') ui.showEnd(data);
   }
+  // UI sounds: one delegated listener over the whole interface layer.
+  document.getElementById('ui').addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    const a = btn.dataset.action;
+    audio.ui(a === 'close' || a === 'back' || a === 'resume' ? 'back' : btn.classList.contains('btn--primary') ? 'confirm' : 'click');
+  });
+  document.getElementById('ui').addEventListener('change', (e) => { if (e.target.matches('input')) audio.ui('tick'); });
 
   const ui = createUI({
     onKickOff: (opts) => startMatch(opts),
-    onPause: (p) => game?.setPaused(p),
+    onPause: (p) => { game?.setPaused(p); audio.setPaused(p); },
     onQuit: endMatch,
     onRematch: () => game?.restart(),
     onSettingChanged: (k, v) => {
@@ -129,7 +141,7 @@ async function boot() {
   if (missing.length) loadingEl.classList.remove('is-done');
 
   // Handy for Playwright and the console during development only.
-  function expose() { if (import.meta.env.DEV) window.__game = { renderer, world, game, ui, assets, missing, settings }; }
+  function expose() { if (import.meta.env.DEV) window.__game = { renderer, world, game, ui, assets, missing, settings, audio }; }
   expose();
 
   // Release GPU memory on page unload.
@@ -137,6 +149,7 @@ async function boot() {
     renderer.setAnimationLoop(null);
     resize.dispose();
     game?.dispose();
+    audio.dispose();
     disposeTree(scene);
     renderer.dispose();
   });
