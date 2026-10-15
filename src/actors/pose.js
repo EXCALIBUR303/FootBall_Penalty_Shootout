@@ -11,6 +11,8 @@ import * as THREE from 'three';
 //
 // A spec looks like:  { name, duration, keys: [ { t: 0.2, pose: { upperarm_l: [['z', 70]], ... } } ] }
 // Each bone entry is a list of [axis, degrees] rotations applied in order.
+// A key may also set `hips`: metres to lower the pelvis. Bending a standing leg shortens it, so without
+// this the planted foot of a crouching pose lifts off the ground.
 
 const AXES = { x: new THREE.Vector3(1, 0, 0), y: new THREE.Vector3(0, 1, 0), z: new THREE.Vector3(0, 0, 1) };
 
@@ -39,6 +41,16 @@ export function buildClip(characterRoot, spec, { mirror = false, name = spec.nam
     }
     tracks.push(new THREE.QuaternionKeyframeTrack(`${info.node.name}.quaternion`, times, values));
   }
+  const pelvis = rest.get('pelvis');
+  if (pelvis && spec.keys.some((k) => k.hips)) {
+    const values = [];
+    for (const key of spec.keys) {
+      // character-space drop -> the pelvis parent's local frame (rotation and scale)
+      const d = new THREE.Vector3(0, -(key.hips ?? 0), 0).applyQuaternion(pelvis.parentQ.clone().invert()).divideScalar(pelvis.parentScale);
+      values.push(...pelvis.restPos.clone().add(d).toArray());
+    }
+    tracks.push(new THREE.VectorKeyframeTrack(`${pelvis.node.name}.position`, spec.keys.map((k) => k.t), values));
+  }
   return new THREE.AnimationClip(name, spec.duration, tracks);
 }
 
@@ -52,12 +64,14 @@ function restFrames(root) {
   const rootInv = new THREE.Quaternion();
   root.updateMatrixWorld(true);
   root.getWorldQuaternion(rootInv).invert();
+  const rootScale = root.getWorldScale(new THREE.Vector3()).y;
   root.traverse((node) => {
     if (!node.isBone) return;
     const parentQ = new THREE.Quaternion();
     node.parent.getWorldQuaternion(parentQ);
     parentQ.premultiply(rootInv); // parent rotation in character space
-    map.set(node.name, { node, rest: node.quaternion.clone(), parentQ });
+    const parentScale = node.parent.getWorldScale(new THREE.Vector3()).y / rootScale;
+    map.set(node.name, { node, rest: node.quaternion.clone(), restPos: node.position.clone(), parentQ, parentScale });
   });
   restCache.set(root, map);
   return map;

@@ -152,12 +152,14 @@ export const KICK = {
     { t: 0, pose: { ...ARMS_DOWN, thigh_r: [['x', 15]], calf_r: [['x', 30]] } },
     {
       t: 0.13, // backswing; plant foot (left) loads
+      hips: 0.02,
       pose: {
         spine_01: [['x', 6], ['y', -10]],
         upperarm_l: [['z', -30], ['y', -40]],
         upperarm_r: [['z', 40], ['y', 20]],
         thigh_l: [['x', -12]],
         calf_l: [['x', 28]],
+        foot_l: [['x', -12]], // sole flat on the grass
         thigh_r: [['x', 42]],
         calf_r: [['x', 88]],
         foot_r: [['x', 30]],
@@ -165,12 +167,14 @@ export const KICK = {
     },
     {
       t: KICK_CONTACT, // contact: knee over the ball, ankle locked
+      hips: 0.03, // bent plant leg: keeps the left foot on the grass
       pose: {
         spine_01: [['x', -6], ['y', 6]],
         upperarm_l: [['z', -25], ['y', -20]],
         upperarm_r: [['z', 50], ['y', -10]],
         thigh_l: [['x', -14]],
         calf_l: [['x', 26]],
+        foot_l: [['x', -12]], // sole flat on the grass
         thigh_r: [['x', -28]],
         calf_r: [['x', 18]],
         foot_r: [['x', 35]],
@@ -178,6 +182,7 @@ export const KICK = {
     },
     {
       t: 0.48, // follow-through
+      hips: 0.015,
       pose: {
         spine_01: [['x', -12], ['y', 14]],
         upperarm_l: [['z', -30], ['y', 10]],
