@@ -42,7 +42,8 @@ await page.keyboard.up('Space'); await page.waitForTimeout(300); await shot('07-
 await page.keyboard.press('Escape'); await log('pause'); await shot('08-pause');
 const pausedPhase = await page.evaluate(() => [window.__game.game.phase, window.__game.game.paused]);
 await page.keyboard.press('Enter'); // Resume
-await page.waitForTimeout(200);
+await page.waitForFunction(() => !window.__game.game.paused && !window.__game.ui.dialogOpen); // wait for the resume to land (slow frames under software GL)
+await page.waitForTimeout(300);
 await page.keyboard.press('Space');
 
 await page.waitForFunction(() => window.__game.game.phase === 'result', null, { timeout: 15000 }).catch(async (e) => {
