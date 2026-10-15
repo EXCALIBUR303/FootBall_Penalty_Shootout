@@ -23,7 +23,7 @@ Used by `?test=1` and `npm run assets:test` to check the loader, Draco and skinn
 
 | Name | Author | License | URL |
 |---|---|---|---|
-| CesiumMan | Cesium | CC-BY 4.0 | https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/CesiumMan |
-| Fox | PixelMannen (model), @tomkranis (rig and animation) | CC0 (model), CC-BY 4.0 (rig and animation) | https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/Fox |
+| CesiumMan | © 2017 Cesium | CC-BY 4.0 | https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/CesiumMan |
+| Fox | PixelMannen (model, CC0); tomkranis (rigging and animation, CC-BY 4.0); @AsoboStudio and @scurest (glTF conversion, CC-BY 4.0) | CC0 / CC-BY 4.0 | https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/Fox |
 
-License details above are from memory of the Khronos sample-asset READMEs and will be re-verified when those pages can be opened.
+Licence details checked against the Khronos glTF-Sample-Assets model READMEs.
