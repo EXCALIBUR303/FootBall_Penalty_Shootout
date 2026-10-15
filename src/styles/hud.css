@@ -144,3 +144,6 @@
   .hud__meters { bottom: calc(var(--sp-5) + 96px); }
   .hud__prompt { font-size: var(--fs--1); }
 }
+
+/* Reduced motion: no full-screen colour pulse (the result banner still announces the outcome). */
+.reduce-motion .hud__flash { display: none; }
