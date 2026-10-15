@@ -1,53 +1,121 @@
-/* Phase 2 functional HUD. Phase 3 does the full visual design; class names are the contract. */
+/* In-match HUD. --home / --away are set per match from the chosen teams. */
 .hud { position: absolute; inset: 0; pointer-events: none; font-family: var(--font-ui); color: var(--text); }
+.hud > .btn { pointer-events: auto; }
 
-.hud__score {
+/* ---------- Scoreboard ---------- */
+.scoreboard {
   position: absolute; top: var(--sp-4); left: 50%; transform: translateX(-50%);
-  display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-2) var(--sp-4);
-  background: color-mix(in srgb, var(--panel) 88%, transparent); border: 1px solid var(--line);
-  border-radius: var(--radius-1); font-variant-numeric: tabular-nums; white-space: nowrap;
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; column-gap: var(--sp-4);
+  padding: var(--sp-2) var(--sp-4) var(--sp-1); min-width: min(560px, calc(100vw - 120px));
+  background: color-mix(in srgb, var(--panel) 90%, transparent); border: 1px solid var(--line);
+  border-radius: var(--radius-1); box-shadow: 0 10px 30px rgb(0 0 0 / 0.35); backdrop-filter: blur(6px);
 }
-.hud__team { font-weight: 700; letter-spacing: 0.04em; }
-.hud__team--home { color: var(--home); }
-.hud__team--away { color: var(--away); }
-.hud__nums { font-size: var(--fs-2); font-weight: 800; }
-.hud__round { color: var(--text-muted); font-size: var(--fs--1); margin-left: var(--sp-2); }
-.hud__dots { display: inline-flex; gap: 3px; font-style: normal; }
-.dot { font-style: normal; font-size: 0.9rem; line-height: 1; }
-.dot--goal { color: var(--accent); }
-.dot--miss { color: var(--danger); }
-.dot--todo { color: var(--text-muted); }
+.scoreboard__team { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; }
+.scoreboard__team--away { justify-content: flex-end; }
+.scoreboard__swatch { width: 6px; height: 28px; border-radius: 3px; flex: none; }
+.scoreboard__team--home .scoreboard__swatch { background: var(--home); }
+.scoreboard__team--away .scoreboard__swatch { background: var(--away); }
+.scoreboard__name { font-family: var(--font-display); font-size: var(--fs-1); letter-spacing: 0.04em; }
+.scoreboard__team--home .scoreboard__name { color: var(--home); }
+.scoreboard__team--away .scoreboard__name { color: var(--away); }
+.scoreboard__score { font-size: var(--fs-3); font-weight: 900; font-variant-numeric: tabular-nums; display: flex; gap: var(--sp-2); }
+.scoreboard__sep { color: var(--text-muted); }
+.scoreboard__score .bump { animation: bump 420ms var(--ease); display: inline-block; }
+@keyframes bump { 40% { transform: scale(1.45); color: var(--gold); } }
+.scoreboard__round { grid-column: 1 / -1; text-align: center; font-size: var(--fs--1); color: var(--text-muted); letter-spacing: 0.08em; text-transform: uppercase; }
+.scoreboard__dots { display: inline-flex; gap: 5px; }
+.dot { width: 11px; height: 11px; border-radius: 50%; display: inline-block; flex: none; }
+.dot--goal { background: var(--accent); }
+.dot--miss { border: 2px solid var(--danger); position: relative; }
+.dot--miss::after { content: ''; position: absolute; inset: 3px -1px auto; height: 2px; background: var(--danger); transform: rotate(-45deg); top: 2.5px; }
+.dot--todo { border: 2px dashed var(--text-muted); opacity: 0.6; }
 
+.hud__pause { position: absolute; top: var(--sp-4); right: var(--sp-4); text-align: center; font-size: var(--fs--1); }
+
+/* ---------- Turn banner ---------- */
+.turn {
+  position: absolute; top: 22%; left: 50%; transform: translate(-50%, -10px); opacity: 0;
+  padding: var(--sp-3) var(--sp-6); border-radius: 999px; background: color-mix(in srgb, var(--bg) 82%, transparent);
+  font-family: var(--font-display); font-size: var(--fs-2); letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap;
+  border-left: 6px solid var(--home);
+}
+.turn[data-team='away'] { border-left-color: var(--away); }
+.turn.is-shown { animation: turn 1400ms var(--ease) both; }
+@keyframes turn { 12%, 80% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, -6px); } }
+
+/* ---------- Reticle ---------- */
 .hud__reticle {
-  position: absolute; left: 0; top: 0; width: 34px; height: 34px; margin: -17px 0 0 -17px;
-  border: 3px solid var(--accent); border-radius: 50%; box-shadow: 0 0 0 2px rgb(0 0 0 / 0.35);
+  position: absolute; left: 0; top: 0; width: 38px; height: 38px; margin: -19px 0 0 -19px;
+  border: 3px solid var(--accent); border-radius: 50%; box-shadow: 0 0 0 2px rgb(0 0 0 / 0.4), inset 0 0 0 2px rgb(0 0 0 / 0.25);
 }
-.hud__reticle::after { content: ''; position: absolute; inset: 12px; background: var(--accent); border-radius: 50%; }
+.hud__reticle::before, .hud__reticle::after { content: ''; position: absolute; background: var(--accent); }
+.hud__reticle::before { left: 50%; top: -9px; bottom: -9px; width: 2px; margin-left: -1px; }
+.hud__reticle::after { top: 50%; left: -9px; right: -9px; height: 2px; margin-top: -1px; }
 
+/* ---------- Prompt + coach marks ---------- */
 .hud__prompt {
-  position: absolute; bottom: var(--sp-6); left: 50%; transform: translateX(-50%); margin: 0;
-  padding: var(--sp-2) var(--sp-4); background: color-mix(in srgb, var(--bg) 80%, transparent);
-  border-radius: 999px; font-size: var(--fs-0); text-align: center; max-width: 90vw;
+  position: absolute; bottom: var(--sp-5); left: 50%; transform: translateX(-50%); margin: 0;
+  padding: var(--sp-2) var(--sp-4); background: color-mix(in srgb, var(--bg) 82%, transparent);
+  border-radius: 999px; font-size: var(--fs-0); text-align: center; max-width: min(90vw, 760px);
 }
 .hud__prompt:empty { display: none; }
+.coach {
+  position: absolute; left: 0; top: 0; display: flex; gap: var(--sp-2); align-items: center; max-width: 280px;
+  padding: var(--sp-2) var(--sp-3); background: var(--gold); color: #0b1220; border-radius: var(--radius-1);
+  font-weight: 700; font-size: var(--fs--1); line-height: 1.35; box-shadow: 0 10px 30px rgb(0 0 0 / 0.35);
+  animation: pop var(--dur-screen) var(--ease) both;
+}
+.coach[data-step='power'], .coach[data-step='curve'] { left: auto; top: auto; right: var(--sp-6); bottom: calc(var(--sp-6) + 120px); }
+.coach__step { flex: none; padding: 2px 6px; border-radius: 6px; background: #0b1220; color: var(--gold); font-variant-numeric: tabular-nums; }
+@keyframes pop { from { opacity: 0; transform: translateY(6px) scale(0.96); } }
 
-.hud__meters { position: absolute; right: var(--sp-6); bottom: var(--sp-6); display: grid; gap: var(--sp-3); width: min(260px, 40vw); }
-.meter { display: grid; gap: var(--sp-1); }
-.meter__label { font-size: var(--fs--1); color: var(--text-muted); letter-spacing: 0.08em; }
-.meter__track { position: relative; height: 12px; background: var(--line); border-radius: 999px; overflow: hidden; }
-.meter__fill { position: absolute; inset: 0 auto 0 0; background: var(--accent); }
-.meter__sweet { position: absolute; inset: 0 0 0 92%; background: color-mix(in srgb, var(--danger) 60%, transparent); }
-.meter__mark { position: absolute; top: 0; bottom: 0; width: 6px; margin-left: -3px; background: var(--gold); border-radius: 3px; }
-.meter--curve { opacity: 0.4; }
+/* ---------- Meters ---------- */
+.hud__meters {
+  position: absolute; right: var(--sp-6); bottom: var(--sp-6); display: grid; gap: var(--sp-3); width: min(280px, 42vw);
+  padding: var(--sp-3) var(--sp-4); background: color-mix(in srgb, var(--panel) 88%, transparent); border: 1px solid var(--line); border-radius: var(--radius-1);
+}
+.meter { display: grid; gap: var(--sp-1); transition: opacity var(--dur-micro) var(--ease); }
+.meter__label { display: flex; justify-content: space-between; font-size: var(--fs--1); color: var(--text-muted); letter-spacing: 0.1em; text-transform: uppercase; }
+.meter__label b { color: var(--text); font-variant-numeric: tabular-nums; letter-spacing: 0; }
+.meter__track { position: relative; height: 14px; background: var(--line); border-radius: 999px; overflow: hidden; }
+.meter__fill { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, var(--accent), var(--gold)); }
+.hud__meters.is-over .meter__fill { background: var(--danger); }
+.meter__sweet { position: absolute; inset: 0 0 0 92%; background: repeating-linear-gradient(-45deg, var(--danger) 0 4px, transparent 4px 8px); opacity: 0.8; }
+.meter__centre { position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: var(--text-muted); }
+.meter__mark { position: absolute; top: 0; bottom: 0; width: 8px; margin-left: -4px; background: var(--gold); border-radius: 4px; box-shadow: 0 0 10px var(--gold); }
+.meter--curve { opacity: 0.45; }
 .hud__meters.is-curve .meter--curve { opacity: 1; }
+.hud__meters.is-curve .meter--power { opacity: 0.65; }
 
+/* ---------- Result banner ---------- */
 .hud__result {
-  position: absolute; top: 34%; left: 50%; transform: translate(-50%, -50%) scale(0.9); opacity: 0;
-  font-size: var(--fs-5); font-weight: 900; letter-spacing: 0.06em; text-transform: uppercase;
-  text-shadow: 0 4px 24px rgb(0 0 0 / 0.5); transition: opacity var(--dur-screen) var(--ease), transform var(--dur-screen) var(--ease);
+  position: absolute; top: 34%; left: 50%; transform: translate(-50%, -50%) scale(0.85); opacity: 0;
+  font-family: var(--font-display); font-size: clamp(2.4rem, 1.4rem + 4vw, 4.4rem); letter-spacing: 0.04em; text-transform: uppercase;
+  text-shadow: 0 4px 28px rgb(0 0 0 / 0.6); transition: opacity var(--dur-screen) var(--ease), transform 420ms cubic-bezier(0.2, 1.4, 0.4, 1);
+  white-space: nowrap;
 }
 .hud__result.is-shown { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 .hud__result[data-kind='goal'] { color: var(--gold); }
-.hud__result[data-kind='saved'], .hud__result[data-kind='miss'], .hud__result[data-kind='post'] { color: var(--text); }
-.hud__result[data-kind='win'] { color: var(--accent); }
-.hud__result[data-kind='lose'] { color: var(--danger); }
+.hud__result[data-kind='saved'] { color: var(--accent); }
+.hud__result[data-kind='miss'], .hud__result[data-kind='post'] { color: var(--text); }
+
+@media (max-width: 720px) {
+  .scoreboard { min-width: 0; width: calc(100vw - 96px); left: var(--sp-3); transform: none; column-gap: var(--sp-2); }
+  .scoreboard__dots { gap: 3px; }
+  .dot { width: 9px; height: 9px; }
+  .hud__meters { left: var(--sp-4); right: var(--sp-4); width: auto; bottom: calc(var(--sp-5) + 48px); }
+  .coach[data-step='power'], .coach[data-step='curve'] { right: var(--sp-4); bottom: calc(var(--sp-5) + 170px); }
+}
+
+/* Phones (playable, not the main target): compact scoreboard, coach marks docked above the prompt. */
+@media (max-width: 520px) {
+  .scoreboard { grid-template-columns: 1fr auto 1fr; padding: var(--sp-1) var(--sp-2); }
+  .scoreboard__dots { display: none; }
+  .scoreboard__name { font-size: var(--fs-0); }
+  .scoreboard__score { font-size: var(--fs-2); }
+  .coach { max-width: none; }
+  .coach[data-step] { transform: none !important; left: var(--sp-4); right: var(--sp-4); top: auto; bottom: calc(var(--sp-5) + 64px); }
+  .coach[data-step='power'], .coach[data-step='curve'] { bottom: calc(var(--sp-5) + 230px); }
+  .hud__meters { bottom: calc(var(--sp-5) + 96px); }
+  .hud__prompt { font-size: var(--fs--1); }
+}
