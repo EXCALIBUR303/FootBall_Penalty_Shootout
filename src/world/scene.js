@@ -16,6 +16,7 @@ export function buildScene(renderer, assets) {
   if (assets.hdri) {
     const pmrem = new THREE.PMREMGenerator(renderer);
     const tex = new THREE.DataTexture(assets.hdri.data, assets.hdri.width, assets.hdri.height, assets.hdri.format, assets.hdri.type);
+    tex.flipY = true; // HDRLoader.parse returns rows bottom-up; load() would set this for us
     tex.mapping = THREE.EquirectangularReflectionMapping;
     tex.colorSpace = THREE.LinearSRGBColorSpace;
     tex.minFilter = tex.magFilter = THREE.LinearFilter;

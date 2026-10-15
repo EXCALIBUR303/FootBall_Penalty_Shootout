@@ -7,11 +7,11 @@ Entries marked **planned** are chosen in `docs/PLAN.md` but not yet downloaded (
 
 | Asset | Name | Author | License | URL | Status |
 |---|---|---|---|---|---|
-| Ball | Soccer ball | Poly by Google | CC-BY 3.0 | https://poly.pizza/search/Soccer%20Ball | planned |
+| Ball | Football (2K textures, optimised with Draco/WebP) | Amal Kumar (Poly Haven) | CC0 | https://polyhaven.com/a/football | **in repo** |
 | Goal + net | Soccer goal | Poly by Google | CC-BY 3.0 | https://poly.pizza/search/Soccer | planned |
 | Goalkeeper, striker | Quaternius character + Universal Animation Library rig | Quaternius | CC0 | https://quaternius.com/packs/universalanimationlibrary.html | planned |
 | Stadium | Stadium | Zsky (Poly Pizza) | CC-BY 3.0 | https://poly.pizza/search/stadium | planned |
-| Sky HDRI | Stadium 01 | Poly Haven | CC0 | https://polyhaven.com/a/stadium_01 | planned |
+| Sky HDRI | Stadium 01 (2K) | Sergej Majboroda (Poly Haven) | CC0 | https://polyhaven.com/a/stadium_01 | **in repo** |
 | Sound effects | Impact Sounds, Interface Sounds | Kenney | CC0 | https://kenney.nl/assets | planned |
 | UI font | Kenney Future | Kenney | CC0 | https://kenney.nl/assets | planned |
 
