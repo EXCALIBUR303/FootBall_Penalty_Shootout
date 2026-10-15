@@ -8,7 +8,8 @@
     "build": "node scripts/copy-draco.mjs && vite build",
     "preview": "vite preview",
     "assets": "node scripts/optimize-assets.mjs",
-    "assets:test": "node scripts/optimize-assets.mjs --test"
+    "assets:test": "node scripts/optimize-assets.mjs --test",
+    "test": "node --test \"tests/*.test.js\""
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.21.0",
