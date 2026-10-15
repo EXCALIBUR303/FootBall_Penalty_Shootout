@@ -4,3 +4,5 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
 #ui { position: fixed; inset: 0; pointer-events: none; }
 #ui > * { pointer-events: auto; }
 :focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+/* Component CSS often sets display; make the hidden attribute always win. */
+[hidden] { display: none !important; }

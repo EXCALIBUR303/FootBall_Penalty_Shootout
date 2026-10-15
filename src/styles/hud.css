@@ -1,0 +1,53 @@
+/* Phase 2 functional HUD. Phase 3 does the full visual design; class names are the contract. */
+.hud { position: absolute; inset: 0; pointer-events: none; font-family: var(--font-ui); color: var(--text); }
+
+.hud__score {
+  position: absolute; top: var(--sp-4); left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-2) var(--sp-4);
+  background: color-mix(in srgb, var(--panel) 88%, transparent); border: 1px solid var(--line);
+  border-radius: var(--radius-1); font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.hud__team { font-weight: 700; letter-spacing: 0.04em; }
+.hud__team--home { color: var(--home); }
+.hud__team--away { color: var(--away); }
+.hud__nums { font-size: var(--fs-2); font-weight: 800; }
+.hud__round { color: var(--text-muted); font-size: var(--fs--1); margin-left: var(--sp-2); }
+.hud__dots { display: inline-flex; gap: 3px; font-style: normal; }
+.dot { font-style: normal; font-size: 0.9rem; line-height: 1; }
+.dot--goal { color: var(--accent); }
+.dot--miss { color: var(--danger); }
+.dot--todo { color: var(--text-muted); }
+
+.hud__reticle {
+  position: absolute; left: 0; top: 0; width: 34px; height: 34px; margin: -17px 0 0 -17px;
+  border: 3px solid var(--accent); border-radius: 50%; box-shadow: 0 0 0 2px rgb(0 0 0 / 0.35);
+}
+.hud__reticle::after { content: ''; position: absolute; inset: 12px; background: var(--accent); border-radius: 50%; }
+
+.hud__prompt {
+  position: absolute; bottom: var(--sp-6); left: 50%; transform: translateX(-50%); margin: 0;
+  padding: var(--sp-2) var(--sp-4); background: color-mix(in srgb, var(--bg) 80%, transparent);
+  border-radius: 999px; font-size: var(--fs-0); text-align: center; max-width: 90vw;
+}
+.hud__prompt:empty { display: none; }
+
+.hud__meters { position: absolute; right: var(--sp-6); bottom: var(--sp-6); display: grid; gap: var(--sp-3); width: min(260px, 40vw); }
+.meter { display: grid; gap: var(--sp-1); }
+.meter__label { font-size: var(--fs--1); color: var(--text-muted); letter-spacing: 0.08em; }
+.meter__track { position: relative; height: 12px; background: var(--line); border-radius: 999px; overflow: hidden; }
+.meter__fill { position: absolute; inset: 0 auto 0 0; background: var(--accent); }
+.meter__sweet { position: absolute; inset: 0 0 0 92%; background: color-mix(in srgb, var(--danger) 60%, transparent); }
+.meter__mark { position: absolute; top: 0; bottom: 0; width: 6px; margin-left: -3px; background: var(--gold); border-radius: 3px; }
+.meter--curve { opacity: 0.4; }
+.hud__meters.is-curve .meter--curve { opacity: 1; }
+
+.hud__result {
+  position: absolute; top: 34%; left: 50%; transform: translate(-50%, -50%) scale(0.9); opacity: 0;
+  font-size: var(--fs-5); font-weight: 900; letter-spacing: 0.06em; text-transform: uppercase;
+  text-shadow: 0 4px 24px rgb(0 0 0 / 0.5); transition: opacity var(--dur-screen) var(--ease), transform var(--dur-screen) var(--ease);
+}
+.hud__result.is-shown { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+.hud__result[data-kind='goal'] { color: var(--gold); }
+.hud__result[data-kind='saved'], .hud__result[data-kind='miss'], .hud__result[data-kind='post'] { color: var(--text); }
+.hud__result[data-kind='win'] { color: var(--accent); }
+.hud__result[data-kind='lose'] { color: var(--danger); }
