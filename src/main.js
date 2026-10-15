@@ -12,6 +12,8 @@ import { setQuality, preset } from './core/quality.js';
 import { createPost } from './core/post.js';
 import { createUI } from './ui/ui.js';
 import { createAudio } from './audio/audio.js';
+import { createPerf } from './core/perf.js';
+import { toast } from './ui/toast.js';
 
 const loadingEl = document.getElementById('loading');
 const fillEl = loadingEl.querySelector('.loading__fill');
@@ -76,6 +78,15 @@ async function boot() {
     expose();
   }
   const audio = createAudio(settings);
+  const perf = createPerf(renderer, {
+    showStats: params.has('stats'),
+    // Not under automation: software GL is always slow and would flip the quality mid-test.
+    onSlow: (ms) => {
+      if (navigator.webdriver || settings.get('quality') !== 'high') return;
+      settings.set('quality', 'low');
+      toast(`Running slowly (${Math.round(1000 / ms)} fps), so graphics were switched to Low. You can change this in Settings.`, 8000);
+    },
+  });
   function onEvent(type, data) {
     audio.onMatchEvent(type, data);
     if (type === 'over') ui.showEnd(data);
@@ -122,7 +133,9 @@ async function boot() {
   timer.connect(document); // pauses time while the tab is hidden
   renderer.setAnimationLoop((now) => {
     timer.update(now);
-    const dt = Math.min(timer.getDelta(), 0.1) * timeScale; // clamp so a stalled frame doesn't jump the simulation
+    const realDt = timer.getDelta();
+    perf.frame(realDt, Boolean(game) && !game.paused);
+    const dt = Math.min(realDt, 0.1) * timeScale; // clamp so a stalled frame doesn't jump the simulation
     if (game) game.update(dt);
     else {
       world.keeper?.update(dt);
@@ -148,11 +161,21 @@ async function boot() {
   function expose() { if (import.meta.env.DEV) window.__game = { renderer, world, game, ui, assets, missing, settings, audio, post }; }
   expose();
 
+  // A lost WebGL context (GPU reset, driver crash) can't be recovered mid-match; say so instead of freezing silently.
+  canvas.addEventListener('webglcontextlost', (e) => {
+    e.preventDefault();
+    renderer.setAnimationLoop(null);
+    errorEl.hidden = false;
+    errorEl.textContent = 'The graphics context was lost. Please reload the page.';
+    loadingEl.classList.remove('is-done');
+  });
+
   // Release GPU memory on page unload.
   window.addEventListener('pagehide', () => {
     renderer.setAnimationLoop(null);
     resize.dispose();
     post.dispose();
+    perf.dispose();
     game?.dispose();
     audio.dispose();
     disposeTree(scene);

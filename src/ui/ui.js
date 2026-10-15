@@ -180,6 +180,7 @@ export function createUI(handlers, root = document.getElementById('ui')) {
   applyMotion();
   settings.subscribe((k, v) => {
     if (k === 'reducedMotion') applyMotion();
+    if (k === 'quality') $$('input[name="quality"]').forEach((r) => { r.checked = r.value === v; }); // e.g. the automatic downgrade
     handlers.onSettingChanged?.(k, v);
   });
 

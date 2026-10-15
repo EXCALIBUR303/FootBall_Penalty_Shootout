@@ -130,3 +130,12 @@ input[type='range'] { width: 100%; accent-color: var(--accent); min-height: 32px
 /* Row of actions: keep labels on one line and centred. */
 .stack--row .btn, .stack > .btn, .panel > .btn { text-align: center; white-space: nowrap; }
 .keys td:last-child { white-space: nowrap; }
+
+/* ---------- Toast ---------- */
+.toast {
+  position: absolute; left: 50%; bottom: var(--sp-6); transform: translate(-50%, 12px); opacity: 0; pointer-events: none;
+  max-width: min(92vw, 520px); padding: var(--sp-3) var(--sp-5); background: var(--panel); color: var(--text);
+  border: 1px solid var(--line); border-radius: var(--radius-1); box-shadow: 0 10px 30px rgb(0 0 0 / 0.4);
+  font-size: var(--fs-0); text-align: center; transition: opacity var(--dur-screen) var(--ease), transform var(--dur-screen) var(--ease);
+}
+.toast.is-shown { opacity: 1; transform: translate(-50%, 0); }
