@@ -16,24 +16,24 @@ const log = async (label) => steps.push(`${label}: focus="${await focused()}"`);
 
 // Fresh profile (first-run onboarding); cleared before the first load rather than reloading mid-load.
 await page.addInitScript(() => { if (!sessionStorage.getItem('tour')) { localStorage.clear(); sessionStorage.setItem('tour', '1'); } });
-await page.goto('http://localhost:5173/');
+await page.goto(`http://localhost:${process.env.PORT || 5173}/`);
 await page.waitForSelector('[data-screen="menu"]:not([hidden])', { timeout: 30000 });
 // Software GL is ~2 fps with bloom, so QA runs on Low with replays off (replays have their own test).
 await page.evaluate(() => { window.__game.settings.set('quality', 'low'); window.__game.settings.set('autoReplay', false); });
 await log('menu'); await shot('01-menu');
-await page.keyboard.press('Tab'); await log('menu tab'); await page.keyboard.press('Tab'); await log('menu tab2');
-await page.keyboard.press('Tab'); await page.keyboard.press('Enter'); await log('settings (from menu)'); await shot('02-settings');
+// Main menu: arrow keys move between the items (Tab works too).
+await page.keyboard.press('ArrowDown'); await log('menu ↓'); await page.keyboard.press('ArrowDown'); await log('menu ↓↓');
+await page.keyboard.press('ArrowDown'); await page.keyboard.press('Enter'); await log('settings (from menu)'); await shot('02-settings');
 await page.keyboard.press('Escape'); await log('settings closed');
-await page.keyboard.press('Shift+Tab'); await page.keyboard.press('Enter'); await log('help'); await shot('03-help');
+await page.keyboard.press('ArrowUp'); await page.keyboard.press('Enter'); await log('help'); await shot('03-help');
 await page.keyboard.press('Escape');
-await page.keyboard.press('Shift+Tab'); await page.keyboard.press('Shift+Tab'); await log('back to play'); await page.keyboard.press('Enter');
-await log('setup'); await shot('04-setup');
-// change team with keyboard: Tab to "next team" and press Enter
-await page.keyboard.press('Tab'); await page.keyboard.press('Tab'); await page.keyboard.press('Tab'); await log('team next'); await page.keyboard.press('Enter');
-// pick difficulty: Tab into the radio group, arrow right
-for (let i = 0; i < 2; i++) await page.keyboard.press('Tab'); // ▶ (away), then the radio group (one tab stop)
-await log('difficulty'); await page.keyboard.press('ArrowRight'); await log('difficulty →');
-await page.keyboard.press('Tab'); await log('kick off'); await page.keyboard.press('Enter');
+await page.keyboard.press('ArrowUp'); await page.keyboard.press('ArrowUp'); await log('back to play'); await page.keyboard.press('Enter');
+await log('setup (Kick off focused)'); await shot('04-setup');
+// difficulty: Shift+Tab into the radio group, arrow right
+await page.keyboard.press('Shift+Tab'); await log('difficulty'); await page.keyboard.press('ArrowRight'); await log('difficulty →');
+// change the opponent: Shift+Tab to its "next team" button, Enter
+await page.keyboard.press('Shift+Tab'); await log('away next'); await page.keyboard.press('Enter');
+await page.keyboard.press('Tab'); await page.keyboard.press('Tab'); await log('kick off'); await page.keyboard.press('Enter');
 await page.waitForFunction(() => window.__game?.game?.phase === 'aim', null, { timeout: 30000 });
 await page.waitForTimeout(300); await shot('05-hud-aim-coach');
 await page.keyboard.down('ArrowLeft'); await page.waitForTimeout(500); await page.keyboard.up('ArrowLeft');

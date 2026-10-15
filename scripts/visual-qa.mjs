@@ -16,7 +16,10 @@ const page = await browser.newPage({ viewport: { width: W, height: H } });
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
 page.on('console', (m) => { if (m.type() === 'error' && !/GPU stall/.test(m.text())) errors.push(m.text()); });
-const shot = async (name, settle = 600) => { await page.waitForTimeout(settle); await page.screenshot({ path: `${out}/${name}.png` }); console.log('shot', name); };
+// Wait for two fresh animation frames before each capture: under software GL a slow frame can otherwise
+// be captured half-drawn.
+const frames = () => page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+const shot = async (name, settle = 600) => { await page.waitForTimeout(settle); await frames(); await page.screenshot({ path: `${out}/${name}.png` }); console.log('shot', name); };
 const phase = (p, timeout = 60000) => page.waitForFunction((p) => [].concat(p).includes(window.__game?.game?.phase), p, { timeout });
 const g = (fn, arg) => page.evaluate(fn, arg);
 
