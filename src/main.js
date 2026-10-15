@@ -6,6 +6,7 @@ import { GAME_ASSETS, TEST_ASSETS, PITCH } from './assets/manifest.js';
 import { loadAssets } from './assets/loader.js';
 import { createRenderer, watchResize } from './core/renderer.js';
 import { buildScene } from './world/scene.js';
+import { applyBackdropQuality } from './world/environment.js';
 import { disposeTree } from './core/dispose.js';
 import { settings } from './core/settings.js';
 import { setQuality, preset } from './core/quality.js';
@@ -110,6 +111,7 @@ async function boot() {
         setQuality(v);
         resize.apply(); // devicePixelRatio cap
         post.apply(); // bloom on/off
+        applyBackdropQuality(world.sky, renderer); // texture filtering
         const size = preset(v).shadowMap;
         world.sun.shadow.mapSize.set(size, size);
         world.sun.shadow.map?.dispose(); // re-allocated at the new size on the next frame

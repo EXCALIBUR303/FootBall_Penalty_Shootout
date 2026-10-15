@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GroundedSkybox } from 'three/examples/jsm/objects/GroundedSkybox.js';
+import { preset } from '../core/quality.js';
 
 /**
  * Stadium environment from one Poly Haven panorama ("Stadium 01", CC0), used two ways:
@@ -41,7 +42,6 @@ export function buildEnvironment(renderer, scene, assets) {
   if (assets.backdrop) {
     map = new THREE.Texture(assets.backdrop);
     map.colorSpace = THREE.SRGBColorSpace;
-    map.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
     map.generateMipmaps = true;
     map.minFilter = THREE.LinearMipmapLinearFilter;
     map.needsUpdate = true;
@@ -58,11 +58,22 @@ export function buildEnvironment(renderer, scene, assets) {
     sky.rotation.y = STADIUM.yaw;
     sky.renderOrder = -1;
     exactProjection(sky.material);
+    applyBackdropQuality(sky, renderer);
     scene.add(sky);
   } else {
     scene.background = new THREE.Color(0x0b1220);
   }
   return { sky, hdrTex };
+}
+
+/** Backdrop filtering follows the quality preset; call again when the preset changes. */
+export function applyBackdropQuality(sky, renderer) {
+  const map = sky?.material.map;
+  if (!map) return;
+  const n = Math.max(1, Math.min(preset().anisotropy, renderer.capabilities.getMaxAnisotropy()));
+  if (map.anisotropy === n) return;
+  map.anisotropy = n;
+  map.needsUpdate = true; // re-uploads with the new sampler setting
 }
 
 /**
