@@ -11,6 +11,7 @@ for (const level of (process.argv[3] || 'easy,normal,hard,legend').split(',')) {
   await page.goto(`http://localhost:5173/?play&difficulty=${level}&timescale=4`);
   await page.waitForFunction(() => window.__game?.game, null, { timeout: 30000 });
   await page.evaluate(() => window.__game.settings.set('autoReplay', false)); // replays would only slow the measurement
+  await page.evaluate(() => window.__game.settings.set('quality', 'low')); // no bloom: 2-3x faster under software GL, same physics
   const tally = { goal: 0, saved: 0, post: 0, miss: 0 };
   let done = 0;
   while (done < N) {
