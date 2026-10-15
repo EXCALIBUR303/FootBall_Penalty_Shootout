@@ -94,14 +94,14 @@
   font-weight: 700; font-size: var(--fs-sm); line-height: 1.35; box-shadow: var(--shadow-1);
   animation: coach var(--dur-screen) var(--ease) both;
 }
-.coach[data-step='power'], .coach[data-step='curve'] { left: 50%; top: auto; bottom: calc(var(--safe) + 190px); transform: translateX(-50%); }
+.coach[data-step='power'], .coach[data-step='curve'] { left: auto; right: var(--safe); top: auto; bottom: calc(var(--safe) + 140px); }
 .coach__step { flex: none; padding: 2px 6px; border-radius: var(--r-sm); background: #120d02; color: var(--c-gold); font-variant-numeric: tabular-nums; }
 @keyframes coach { from { opacity: 0; } }
 
-/* ---------- Meters (bottom centre, above the hints) ---------- */
+/* ---------- Meters (bottom right: the aim shot keeps the ball low centre and the striker left) ---------- */
 .meters {
-  position: absolute; left: 50%; bottom: calc(var(--safe) + 56px); transform: translateX(-50%); z-index: 1;
-  width: min(460px, 70vw); display: grid; gap: var(--sp-3); padding: var(--sp-3) var(--sp-4) var(--sp-4);
+  position: absolute; right: var(--safe); bottom: var(--safe); z-index: 1;
+  width: min(400px, 34vw); display: grid; gap: var(--sp-3); padding: var(--sp-3) var(--sp-4) var(--sp-4);
   background: var(--c-surface); border: 1px solid var(--c-line); border-radius: var(--r-md); box-shadow: var(--shadow-1);
 }
 .meter { display: grid; gap: 6px; transition: opacity var(--dur-micro) var(--ease); }
@@ -195,7 +195,7 @@
   .k { width: 11px; height: 11px; }
   .k--goal::after { left: 3px; top: 2px; width: 3px; height: 5px; }
   .k--miss::before, .k--miss::after { width: 6px; margin-left: -3px; }
-  .meters { width: calc(100vw - 2 * var(--safe)); bottom: calc(var(--safe) + 96px); }
+  .meters { left: var(--safe); right: var(--safe); width: auto; bottom: calc(var(--safe) + 96px); }
   .coach[data-step] { transform: none !important; left: var(--safe); right: var(--safe); top: auto; bottom: calc(var(--safe) + 250px); max-width: none; }
   .lt { bottom: calc(var(--safe) + 110px); }
 }

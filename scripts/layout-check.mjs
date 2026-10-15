@@ -71,7 +71,7 @@ for (const [w, h] of VIEWPORTS) {
   await page.evaluate(async () => {
     const g = window.__game.game; const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     for (let i = 0; i < 40 && g.phase !== 'over'; i++) {
-      while (!['aim', 'keeper', 'over'].includes(g.phase)) await wait(80);
+      while (!['aim', 'power', 'curve', 'keeper', 'over'].includes(g.phase)) await wait(80);
       if (g.phase === 'over') break;
       if (g.kick.shooterHuman) g.debugShoot({ x: 0, y: 0.5 }, 0.3, 0); else g.debugKeeper(3, 0.5);
       while (g.phase !== 'result' && g.phase !== 'over') await wait(80);
