@@ -124,7 +124,7 @@ export async function createMatch({ world, canvas, params, options = {}, setting
       aim.x = 0; aim.y = 1.2;
       input.resetPointer();
       setPhase('aim');
-      director.cut(SHOTS.aim(SPOT, aim), { cut: true });
+      director.cut(SHOTS.aim(SPOT), { cut: true });
     } else {
       kick.ai = chooseShot(level, rand);
       setPhase('keeper');
@@ -177,8 +177,7 @@ export async function createMatch({ world, canvas, params, options = {}, setting
     recordKick(shootout, scored);
     hud.result(outcome, RESULT_TEXT[outcome]);
     hud.setScore(shootout, { round: currentRound(shootout), suddenDeath: isSuddenDeath(shootout) });
-    // A goal cuts straight to the behind-the-net angle: gliding there would drag the camera through the net.
-    director.cut(SHOTS.reaction(scored ? 'goal' : 'save', ball.position.clone()), { cut: scored });
+    director.cut(SHOTS.reaction(scored ? 'goal' : 'save', ball.position.clone()));
     striker.react(scored ? 'celebrate' : 'dejected');
     if (!scored && kick.touchedKeeper) keeper.react('celebrate');
     recorder.mark('result');
@@ -225,7 +224,9 @@ export async function createMatch({ world, canvas, params, options = {}, setting
     setPhase('replay');
     recorder.apply(replay.t); // pose the scene first: the camera's first frame tracks the replayed ball, not the live one
     const side = (kick.shot?.target.x ?? 0) >= 0 ? 1 : -1;
-    director.cut(SHOTS.replay(replays % 2 ? 'behind' : 'side', side, () => ball.position), { cut: true });
+    // Goals alternate the goal-line and behind-the-striker angles; saves and woodwork are clearest side-on.
+    const angle = kick.outcome === 'goal' ? (replays % 2 ? 'goalline' : 'striker') : (replays % 2 ? 'side' : 'striker');
+    director.cut(SHOTS.replay(angle, side, () => ball.position), { cut: true });
   }
 
   function updateReplay(rawDt) {
@@ -394,7 +395,7 @@ export async function createMatch({ world, canvas, params, options = {}, setting
     else if (phase === 'replay') endReplay();
     else if (!kick?.shooterHuman && keeperWindow() && source === 'pointer') {
       // 1P in goal: click where to dive.
-      const p = input.pointerOnGoalPlane(tmp);
+      const p = keeperPointerTarget();
       if (p) keeperChoice(p.x, p.y);
     }
   });
@@ -415,6 +416,20 @@ export async function createMatch({ world, canvas, params, options = {}, setting
     const m = map[e.code];
     if (m) keeperChoice(m[0], m[1]);
   });
+
+  /**
+   * From the keeper's camera (inside the goal mouth) the goal frame itself is off-screen, so a ray onto the
+   * goal plane would only reach a metre or so either side. Map the screen to the goal instead: the screen's
+   * width spans the goal mouth (screen-left is +X when facing out) and its height spans ground to bar.
+   */
+  function keeperPointerTarget() {
+    const n = input.pointerNdc();
+    if (!n) return null;
+    return {
+      x: THREE.MathUtils.clamp(-n.x * GOAL.halfWidth * 1.15, -GOAL.halfWidth, GOAL.halfWidth),
+      y: THREE.MathUtils.clamp(((n.y + 0.85) / 1.45) * GOAL.height, 0.1, GOAL.height),
+    };
+  }
 
   function keeperChoice(x, y) {
     if (playerMove || kick.outcome) return;

@@ -76,11 +76,15 @@ function spring(value, goal, vel, k, dt) {
 const v = (x, y, z) => new THREE.Vector3(x, y, z);
 
 export const SHOTS = {
-  /** Broadcast view behind the ball while aiming; drifts slightly with the aim point. */
-  aim: (ball, aim) => () => ({
-    pos: v(ball.x * 0.5 + aim.x * 0.08, 1.75, ball.z + 6.2),
-    target: v(aim.x * 0.12, 1.15, 0),
-    fov: 45,
+  /**
+   * Broadcast view from behind and to the right of the ball: striker on the left third, ball low centre,
+   * whole goal and keeper in frame. Deliberately static — mouse aiming is a ray through this camera, so a
+   * camera that followed the aim would feed back into it (it used to spin the view off the goal).
+   */
+  aim: (ball) => () => ({
+    pos: v(ball.x + 1.0, 2.35, ball.z + 8.6),
+    target: v(ball.x - 0.35, 1.05, 2.0),
+    fov: 40,
     stiffness: 4,
   }),
   /** Run-up: low angle from the striker's left, slowly pushing in. */
@@ -101,23 +105,36 @@ export const SHOTS = {
       stiffness: near ? 4 : 9,
     };
   },
-  /** Goal: reverse angle from behind the net. Save/miss: side-on to the keeper. */
-  reaction: (kind, ball) => (t) =>
-    kind === 'goal'
-      ? { pos: v(ball.x * 0.4 + 1.2, 1.9 + t * 0.1, -7.5 + t * 0.6), target: v(ball.x * 0.6, 1.0, 1.0), fov: 42, stiffness: 3 }
-      : { pos: v(6.5 - t * 0.4, 1.5, 3.5), target: v(0, 0.9, 0.3), fov: 40, stiffness: 3 },
   /**
-   * Replay cameras. 'side': low, wide angle from the side of the penalty area, following the ball.
-   * 'behind': from behind the goal line looking back up the pitch, so the ball flies at the lens.
-   * `side` (±1) is the side the shot went to.
+   * After the kick. Both angles stay in FRONT of the goal line so the net is behind the action, never across
+   * the lens: a goal is seen from the opposite side of the box looking into the corner the ball went in;
+   * a save or miss side-on to the keeper.
+   */
+  reaction: (kind, ball) => (t) => {
+    const side = ball.x >= 0 ? 1 : -1;
+    return kind === 'goal'
+      ? { pos: v(-side * 3.4 + ball.x * 0.25, 1.45 + t * 0.05, 6.2 - t * 0.25), target: v(ball.x * 0.75, Math.max(0.8, ball.y * 0.7), -0.4), fov: 38, stiffness: 3 }
+      : { pos: v(6.5 - t * 0.4, 1.5, 3.5), target: v(0, 0.9, 0.3), fov: 40, stiffness: 3 };
+  },
+  /**
+   * Player in goal: just inside the goal mouth, above and behind the keeper's head, looking out at the
+   * striker. The crossbar frames the top of the shot; the net is behind the camera.
+   */
+  keeperView: () => () => ({ pos: v(0, 2.2, -1.05), target: v(0, 0.8, 11), fov: 56, stiffness: 5 }),
+  /**
+   * Replay angles, all clear of the net. `side` (±1) is the side the shot went to.
+   *  'side'     broadcast sideline camera, level with the six-yard box, tracking the ball
+   *  'goalline' low on the goal line beyond the far post: the ball comes across the lens into the corner
+   *  'striker'  high behind the striker: the whole flight and the keeper's dive in one frame
    */
   replay: (angle, side, getBall) => () => {
     const b = getBall();
-    if (angle === 'behind') {
-      return { pos: v(-side * 2.4, 1.4, -6.5), target: v(b.x * 0.6, Math.max(0.8, b.y * 0.8), Math.min(Math.max(b.z, -1), 9)), fov: 44, stiffness: 6 };
+    if (angle === 'goalline') {
+      return { pos: v(-side * 6.2, 0.75, 1.6), target: v(b.x * 0.7, Math.max(0.6, b.y * 0.85), Math.min(Math.max(b.z, 0), 8) * 0.6), fov: 40, stiffness: 6 };
     }
-    return { pos: v(-side * 9, 1.5, 6.5), target: v(b.x * 0.85, Math.max(0.7, b.y), Math.min(Math.max(b.z, 0.5), 9)), fov: 36, stiffness: 6 };
+    if (angle === 'striker') {
+      return { pos: v(-0.6, 3.1, 18.5), target: v(b.x * 0.35, 1.0, Math.min(b.z, 11) * 0.3), fov: 34, stiffness: 5 };
+    }
+    return { pos: v(-side * 9, 1.6, 6.5), target: v(b.x * 0.85, Math.max(0.7, b.y), Math.min(Math.max(b.z, 0.5), 9)), fov: 36, stiffness: 6 };
   },
-  /** Player in goal: just behind the keeper, looking out at the striker. */
-  keeperView: () => () => ({ pos: v(0, 1.85, -3.2), target: v(0, 1.0, 11), fov: 52, stiffness: 5 }),
 };

@@ -68,6 +68,8 @@ export function createInput(canvas, camera) {
       ray.setFromCamera(ndc, camera);
       return ray.ray.intersectPlane(goalPlane, out);
     },
+    /** Pointer position in normalised device coordinates (-1..1, y up), or null before it has moved. */
+    pointerNdc() { return pointerSeen ? { x: ndc.x, y: ndc.y } : null; },
     /** Forget the pointer (so keyboard aiming isn't overridden until the mouse moves again). */
     resetPointer() { pointerSeen = false; },
     dispose() {
