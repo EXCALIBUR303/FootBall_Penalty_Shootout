@@ -9,7 +9,7 @@ const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
 page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
-await page.goto(`http://localhost:5173/?difficulty=${level}`);
+await page.goto(`http://localhost:5173/?play&difficulty=${level}`);
 await page.waitForFunction(() => window.__game?.game, null, { timeout: 30000 });
 const targets = [[2.8, 0.6], [-2.9, 1.9], [0.2, 1.0], [3.2, 2.0], [-2.5, 0.4], [2.4, 1.2], [-3.1, 1.5]];
 const log = [];

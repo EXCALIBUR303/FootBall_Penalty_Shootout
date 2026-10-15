@@ -2,11 +2,14 @@ import './styles/tokens.css';
 import './styles/base.css';
 import './styles/loading.css';
 import * as THREE from 'three';
-import { GAME_ASSETS, TEST_ASSETS } from './assets/manifest.js';
+import { GAME_ASSETS, TEST_ASSETS, PITCH } from './assets/manifest.js';
 import { loadAssets } from './assets/loader.js';
 import { createRenderer, watchResize } from './core/renderer.js';
 import { buildScene } from './world/scene.js';
 import { disposeTree } from './core/dispose.js';
+import { settings } from './core/settings.js';
+import { setQuality, preset } from './core/quality.js';
+import { createUI } from './ui/ui.js';
 
 const loadingEl = document.getElementById('loading');
 const fillEl = loadingEl.querySelector('.loading__fill');
@@ -19,6 +22,7 @@ const testMode = params.has('test');
 
 async function boot() {
   const canvas = document.getElementById('game');
+  setQuality(settings.get('quality')); // quality.js reads its own key; keep the two in step
   const renderer = createRenderer(canvas);
 
   const entries = testMode ? TEST_ASSETS : GAME_ASSETS;
@@ -40,13 +44,60 @@ async function boot() {
   const world = buildScene(renderer, assets);
   const { scene, camera } = world;
   const resize = watchResize(renderer, camera, canvas);
+  const playable = world.keeper && world.striker && world.ball;
 
+  // --- App state: menu (orbiting camera) or a match --------------------------------------------
   let game = null;
+  let starting = false;
+  let menuT = 0;
+
+  async function startMatch(options) {
+    if (starting) return;
+    starting = true;
+    game?.dispose();
+    const { createMatch } = await import('./game/match.js');
+    game = await createMatch({ world, renderer, canvas, params, options, settings, onEvent });
+    starting = false;
+    expose();
+  }
+  function endMatch() {
+    game?.dispose();
+    game = null;
+    world.keeper.ready();
+    world.striker.setUp(new THREE.Vector3(0, PITCH.ballRadius, PITCH.penaltySpotZ));
+    world.ball.position.set(0, PITCH.ballRadius, PITCH.penaltySpotZ);
+    world.ball.quaternion.identity();
+    ui.showMenu();
+    expose();
+  }
+  function onEvent(type, data) {
+    if (type === 'over') ui.showEnd(data);
+  }
+
+  const ui = createUI({
+    onKickOff: (opts) => startMatch(opts),
+    onPause: (p) => game?.setPaused(p),
+    onQuit: endMatch,
+    onRematch: () => game?.restart(),
+    onSettingChanged: (k, v) => {
+      if (k === 'quality') {
+        setQuality(v);
+        resize.apply(); // devicePixelRatio cap
+        const size = preset(v).shadowMap;
+        world.sun.shadow.mapSize.set(size, size);
+        world.sun.shadow.map?.dispose(); // re-allocated at the new size on the next frame
+        world.sun.shadow.map = null;
+      }
+    },
+  });
+
+  // Dev shortcuts: ?pose=… freezes a pose, ?play starts a match straight away (used by test scripts).
   if (import.meta.env.DEV && params.has('pose')) {
     (await import('./dev/pose-preview.js')).applyPosePreview(world, params);
-  } else if (world.keeper && world.striker && world.ball) {
-    const { createMatch } = await import('./game/match.js');
-    game = await createMatch({ world, renderer, canvas, params });
+  } else if (playable && import.meta.env.DEV && params.has('play')) {
+    await startMatch({ mode: params.get('mode') ?? '1p', difficulty: params.get('difficulty') ?? 'normal' });
+  } else if (playable) {
+    ui.showMenu();
   }
 
   // Dev-only ?timescale=4 fast-forwards the simulation (used by the balancing script).
@@ -57,15 +108,29 @@ async function boot() {
     timer.update(now);
     const dt = Math.min(timer.getDelta(), 0.1) * timeScale; // clamp so a stalled frame doesn't jump the simulation
     if (game) game.update(dt);
-    else { world.keeper?.update(dt); world.striker?.update(dt); }
+    else {
+      world.keeper?.update(dt);
+      world.striker?.update(dt);
+      if (!params.has('pose')) orbit(dt);
+    }
     renderer.render(scene, camera);
   });
 
-  if (!missing.length) loadingEl.classList.add('is-done');
-  else setTimeout(() => loadingEl.classList.add('is-done'), 4000);
+  // Slow broadcast-style orbit behind the menu (a static wide shot with reduced motion).
+  function orbit(dt) {
+    menuT += settings.get('reducedMotion') ? 0 : dt;
+    const a = -0.5 + Math.sin(menuT * 0.06) * 0.5;
+    camera.position.set(Math.sin(a) * 15, 3.2 + Math.sin(menuT * 0.11) * 0.3, 6 + Math.cos(a) * 15);
+    camera.lookAt(0, 1.0, 4.5);
+    if (camera.fov !== 42) { camera.fov = 42; camera.updateProjectionMatrix(); }
+  }
+
+  loadingEl.classList.add('is-done');
+  if (missing.length) loadingEl.classList.remove('is-done');
 
   // Handy for Playwright and the console during development only.
-  if (import.meta.env.DEV) window.__game = { renderer, world, game, assets, missing };
+  function expose() { if (import.meta.env.DEV) window.__game = { renderer, world, game, ui, assets, missing, settings }; }
+  expose();
 
   // Release GPU memory on page unload.
   window.addEventListener('pagehide', () => {

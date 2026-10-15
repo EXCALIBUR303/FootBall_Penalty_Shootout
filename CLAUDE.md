@@ -84,5 +84,8 @@ what was tested, decisions needed).
 - Phase 2 dev tools: `/?debug` draws Rapier colliders; `/?timescale=4` fast-forwards (dev only);
   scripts/play-test.mjs (full shootout), scripts/balance.mjs (AI save rates), scripts/probe-dive.mjs.
   `npm test` runs node unit tests (rules, shot solver, Rapier physics).
+- Phase 3: `/?play` (dev) skips the menu. UI QA: scripts/ui-tour.mjs (keyboard-only walk of every screen),
+  scripts/responsive-shots.mjs (tablet/phone + touch). UI = src/ui/ui.js (screens/dialogs) + src/ui/hud.js;
+  settings in src/core/settings.js; teams in src/game/teams.js.
 - Phase 0 plan lives in `docs/PLAN.md`.
 - Git branch for development: `claude/3d-football-penalty-shootout-q6sult`.

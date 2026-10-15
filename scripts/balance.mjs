@@ -8,7 +8,7 @@ const page = await browser.newPage({ viewport: { width: 640, height: 360 } });
 // Typical player shots: mostly corners-ish, some lazy central ones.
 const target = (i) => { const r = (i * 0.618) % 1, s = (i * 0.414) % 1; const central = i % 5 === 0; return { x: central ? (r - 0.5) * 1.2 : (r < 0.5 ? -1 : 1) * (1.6 + 1.7 * s), y: 0.3 + ((i * 0.733) % 1) * 1.9 }; };
 for (const level of (process.argv[3] || 'easy,normal,hard,legend').split(',')) {
-  await page.goto(`http://localhost:5173/?difficulty=${level}&timescale=4`);
+  await page.goto(`http://localhost:5173/?play&difficulty=${level}&timescale=4`);
   await page.waitForFunction(() => window.__game?.game, null, { timeout: 30000 });
   const tally = { goal: 0, saved: 0, post: 0, miss: 0 };
   let done = 0;

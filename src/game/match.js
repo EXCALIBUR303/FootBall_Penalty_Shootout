@@ -8,45 +8,66 @@ import { createInput } from './input.js';
 import { Director, SHOTS } from '../camera/director.js';
 import { createHud } from '../ui/hud.js';
 import { KEEPER_LIMBS } from '../actors/keeper.js';
-import { KIT, setKit } from '../world/scene.js';
+import { setKit } from '../world/scene.js';
+import { KEEPER_KIT, TEAMS } from './teams.js';
 
 const SPOT = new THREE.Vector3(0, BALL.radius, 11);
 const POWER_PERIOD = 1.1; // seconds for the power bar to go 0 → 100%
 const CURVE_PERIOD = 1.0; // seconds for a full curve swing
 const AIM = { minX: -4.6, maxX: 4.6, minY: 0.15, maxY: 3.2, keySpeed: 3.2 };
+const RESULT_HOLD = 2.6; // seconds the result is shown before the next kick
+
+const RESULT_TEXT = { goal: 'Goal!', saved: 'Saved!', post: 'Off the woodwork!', miss: 'Missed!' };
 
 /**
  * Match controller: a small state machine around one penalty at a time.
  *
- * Home kicks (player shoots):  aim → power (hold) → curve (press) → runup → flight → result
- * Away kicks (player keeps):   keeper → runup → flight → result
- * …until the shootout has a winner → over.
+ *   Human shooter:  aim → power (hold) → curve (press) → runup → flight → result
+ *   AI shooter:     keeper (human picks a dive) → runup → flight → result
+ *   …until the shootout has a winner → over.
  *
- * Emits nothing yet; Phase 3 wires the menus to `on(...)` and the state getters.
+ * 1P: the player shoots for home and keeps goal for away. 2P: both shooters and both keepers are human
+ * (shooter: mouse / arrows + Space; keeper: A D Q E S W).
+ *
+ * @param {{ world, canvas, params: URLSearchParams,
+ *   options: { mode: '1p'|'2p', difficulty: string, home: object, away: object },
+ *   settings: { get(k), subscribe(fn) }, onEvent?: (type: string, data: object) => void }} args
  */
-export async function createMatch({ world, canvas, params }) {
+export async function createMatch({ world, canvas, params, options = {}, settings, onEvent = () => {} }) {
   const { keeper, striker, ball, camera } = world;
-  const level = DIFFICULTY[params.get('difficulty')] ? params.get('difficulty') : 'normal';
+  const mode = options.mode ?? '1p';
+  const level = DIFFICULTY[options.difficulty] ? options.difficulty : DIFFICULTY[params.get('difficulty')] ? params.get('difficulty') : 'normal';
   const ai = DIFFICULTY[level];
+  const teams = { home: options.home ?? TEAMS[0], away: options.away ?? TEAMS[1] };
+  const get = (k, fallback) => settings?.get(k) ?? fallback;
 
   const physics = await createPhysics({ onEvent: onPhysicsEvent });
   physics.setKeeperLimbs(KEEPER_LIMBS);
   const director = new Director(camera);
-  const hud = createHud();
+  director.reducedMotion = get('reducedMotion', director.reducedMotion);
+  const hud = createHud(teams);
   const input = createInput(canvas, camera);
   const rand = Math.random;
+  setKit(keeper.root, KEEPER_KIT);
+
+  const unsubscribe = settings?.subscribe((k, v) => {
+    if (k === 'reducedMotion') director.reducedMotion = v;
+    if (k === 'hints') refreshPrompt();
+  });
 
   let shootout = createShootout();
   const history = { left: 0, right: 0 }; // where the player tends to shoot (keeper "memory")
   let phase = 'idle';
   let phaseT = 0;
+  let paused = false;
   const aim = { x: 0, y: 1.2 };
   const meter = { power: 0, curve: 0 };
-  let kick = null; // current kick: { team, touchedKeeper, woodwork, held, outcome, ... }
+  let kick = null; // current kick: { team, shooterHuman, keeperHuman, touchedKeeper, woodwork, held, outcome, … }
   let pendingSave = null; // { at: seconds after strike, move }
   let playerMove = null; // human keeper's chosen move (queued before the strike or immediate after)
   let accumulator = 0;
   let forcedSave = null; // dev/test: overrides the AI's next decision
+  let coaching = !get('onboarded', false) && mode === '1p'; // first-time coach marks
   const limbPos = new Map();
   const tmp = new THREE.Vector3();
 
@@ -57,55 +78,56 @@ export async function createMatch({ world, canvas, params }) {
     debugLines.renderOrder = 999;
     world.scene.add(debugLines);
   }
-  function drawDebug() {
-    const { vertices } = physics.world.debugRender();
-    debugLines.geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
-  }
 
   // --- Flow ---------------------------------------------------------------------------------
-  function setPhase(p) { phase = p; phaseT = 0; }
+  function setPhase(p) { phase = p; phaseT = 0; refreshPrompt(); refreshCoach(); }
 
   function startKick() {
     const team = nextKicker(shootout);
+    const shooterHuman = mode === '2p' || team === 'home';
+    const keeperHuman = mode === '2p' || team === 'away';
     physics.resetBall(SPOT.x, SPOT.z);
     syncBall();
     keeper.ready();
     striker.setUp(SPOT);
-    setKit(striker.root, team === 'home' ? KIT.home : KIT.away);
+    setKit(striker.root, teams[team].color);
     hud.result(null);
+    hud.meters(false);
     hud.setScore(shootout, { round: currentRound(shootout), suddenDeath: isSuddenDeath(shootout) });
-    kick = { team, touchedKeeper: false, woodwork: false, held: false, outcome: null, t: 0 };
+    kick = { team, shooterHuman, keeperHuman, touchedKeeper: false, woodwork: false, held: false, outcome: null, t: 0 };
     pendingSave = null;
     playerMove = null;
+    accumulator = 0;
 
-    if (team === 'home') {
+    const who = mode === '1p'
+      ? (team === 'home' ? 'Your kick' : "You're in goal")
+      : `${team === 'home' ? 'Player 1' : 'Player 2'} to shoot`;
+    hud.turn(who, team);
+
+    if (shooterHuman) {
       aim.x = 0; aim.y = 1.2;
       input.resetPointer();
       setPhase('aim');
       director.cut(SHOTS.aim(SPOT, aim), { cut: true });
-      hud.prompt('Aim with the mouse or arrow keys · hold SPACE / click to charge power');
     } else {
       kick.ai = chooseShot(level, rand);
       setPhase('keeper');
       director.cut(SHOTS.keeperView(), { cut: true });
-      hud.prompt('You are in goal · click where to dive, or ← → (low), Q E (high), ↓ (block), ↑ (jump)');
     }
+    onEvent('kick', { team, shooterHuman, keeperHuman, round: currentRound(shootout) });
   }
 
   function beginRunUp() {
     setPhase('runup');
     hud.meters(false);
     hud.reticle(null);
-    hud.prompt('');
     director.cut(SHOTS.runUp(SPOT));
     striker.runUp(SPOT, strike, 0.95);
   }
 
   /** Boot meets ball. */
   function strike() {
-    const shot = kick.team === 'home'
-      ? { target: { ...aim }, power: meter.power, curve: meter.curve }
-      : kick.ai;
+    const shot = kick.shooterHuman ? { target: { ...aim }, power: meter.power, curve: meter.curve } : kick.ai;
     const { velocity, spin } = solveShot(SPOT, shot.target, shot.power, shot.curve, rand);
     physics.kick(velocity, spin);
     kick.shot = shot;
@@ -113,15 +135,17 @@ export async function createMatch({ world, canvas, params }) {
     setPhase('flight');
     director.cut(SHOTS.follow(() => ball.position));
 
-    if (kick.team === 'home') {
-      // Player is shooting: AI keeper reads (or guesses) the shot.
+    if (coaching && kick.shooterHuman) { coaching = false; settings?.set?.('onboarded', true); refreshCoach(); }
+
+    if (!kick.keeperHuman) {
+      // AI keeper reads (or guesses) the shot.
       const decision = forcedSave ?? decideSave(kick.launch, level, history, rand);
       forcedSave = null;
       pendingSave = { at: decision.delay, move: decision.move };
-      if (shot.target.x > 0.6) history.right++; else if (shot.target.x < -0.6) history.left++;
     } else if (playerMove) {
-      keeper.dive(playerMove); // player committed before the strike
+      keeper.dive(playerMove); // human keeper committed before the strike
     }
+    if (kick.shooterHuman) { if (shot.target.x > 0.6) history.right++; else if (shot.target.x < -0.6) history.left++; }
   }
 
   function finishKick(outcome) {
@@ -129,13 +153,29 @@ export async function createMatch({ world, canvas, params }) {
     kick.outcome = outcome;
     const scored = outcome === 'goal';
     recordKick(shootout, scored);
-    hud.result(outcome, { goal: 'Goal!', saved: 'Saved!', post: 'Off the woodwork!', miss: 'Missed!' }[outcome]);
+    hud.result(outcome, RESULT_TEXT[outcome]);
     hud.setScore(shootout, { round: currentRound(shootout), suddenDeath: isSuddenDeath(shootout) });
     director.cut(SHOTS.reaction(scored ? 'goal' : 'save', ball.position.clone()));
     striker.react(scored ? 'celebrate' : 'dejected');
     if (!scored && kick.touchedKeeper) keeper.react('celebrate');
-    hud.prompt('');
     setPhase('result');
+    onEvent('result', { team: kick.team, outcome, score: { home: score(shootout, 'home'), away: score(shootout, 'away') } });
+  }
+
+  // --- Prompts / onboarding -------------------------------------------------------------------
+  function refreshPrompt() {
+    if (!get('hints', true)) return hud.prompt('');
+    const keeperKeys2p = 'Keeper: A D low · Q E high · S block · W jump';
+    const text = {
+      aim: mode === '2p' ? `Aim with the mouse or arrows · hold SPACE for power — ${keeperKeys2p}` : 'Aim with the mouse or arrows · hold SPACE (or press and hold) for power',
+      power: 'Release to set power — the striped end skies it',
+      curve: 'Press again to lock the curve',
+      keeper: 'Click where to dive — or ← → low · Q E high · ↓ block · ↑ jump',
+    }[phase] ?? '';
+    hud.prompt(text);
+  }
+  function refreshCoach() {
+    hud.coach(coaching && kick?.shooterHuman && ['aim', 'power', 'curve'].includes(phase) ? phase : null);
   }
 
   // --- Physics events -----------------------------------------------------------------------
@@ -144,16 +184,21 @@ export async function createMatch({ world, canvas, params }) {
     if (e.type === 'post' || e.type === 'bar') {
       kick.woodwork = true;
       director.addShake(0.06);
+      onEvent('woodwork', { speed: e.speed });
     } else if (e.type === 'keeper' && !kick.touchedKeeper) {
       kick.touchedKeeper = true;
       // Clean contact on a slower ball = catch and hold; otherwise the physics parries it.
-      const catchBelow = kick.team === 'home' ? ai.catchBelow : DIFFICULTY.normal.catchBelow;
+      const catchBelow = kick.keeperHuman ? DIFFICULTY.normal.catchBelow : ai.catchBelow;
       if (e.speed < catchBelow) kick.held = true;
+      onEvent('keeper-touch', { held: kick.held, speed: e.speed });
+    } else if (e.type === 'net') {
+      onEvent('net', { speed: e.speed });
     }
   }
 
   // --- Per-frame ----------------------------------------------------------------------------
   function update(dt) {
+    if (paused) return;
     phaseT += dt;
     handlePhaseInput(dt);
 
@@ -181,12 +226,14 @@ export async function createMatch({ world, canvas, params }) {
       if (phase === 'flight') judge();
     }
 
-    if (phase === 'result' && phaseT > 2.6) {
+    if (phase === 'result' && phaseT > RESULT_HOLD) {
       if (shootout.winner) {
         setPhase('over');
-        const won = shootout.winner === 'home';
-        hud.result(won ? 'win' : 'lose', won ? 'You win!' : 'You lose');
-        hud.prompt(`${score(shootout, 'home')} – ${score(shootout, 'away')} · press ENTER to play again`);
+        hud.result(null);
+        onEvent('over', {
+          winner: shootout.winner, mode, home: teams.home, away: teams.away,
+          score: { home: score(shootout, 'home'), away: score(shootout, 'away') },
+        });
       } else {
         startKick();
       }
@@ -195,21 +242,27 @@ export async function createMatch({ world, canvas, params }) {
     if (debugLines) {
       keeper.root.updateMatrixWorld(true);
       physics.driveKeeperLimbs(keeper.limbPositions(limbPos));
-      drawDebug();
+      const { vertices } = physics.world.debugRender();
+      debugLines.geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
     }
     director.update(dt);
   }
 
   function handlePhaseInput(dt) {
     if (phase === 'aim' || phase === 'power' || phase === 'curve') {
-      // Keyboard aiming
-      const dx = (input.held('ArrowRight', 'KeyD') ? 1 : 0) - (input.held('ArrowLeft', 'KeyA') ? 1 : 0);
-      const dy = (input.held('ArrowUp', 'KeyW') ? 1 : 0) - (input.held('ArrowDown', 'KeyS') ? 1 : 0);
+      // Keyboard aiming. In 2P the keeper owns WASD, so the shooter aims with the arrows only.
+      const R = mode === '2p' ? ['ArrowRight'] : ['ArrowRight', 'KeyD'];
+      const L = mode === '2p' ? ['ArrowLeft'] : ['ArrowLeft', 'KeyA'];
+      const U = mode === '2p' ? ['ArrowUp'] : ['ArrowUp', 'KeyW'];
+      const D = mode === '2p' ? ['ArrowDown'] : ['ArrowDown', 'KeyS'];
+      const dx = (input.held(...R) ? 1 : 0) - (input.held(...L) ? 1 : 0);
+      const dy = (input.held(...U) ? 1 : 0) - (input.held(...D) ? 1 : 0);
       if (dx || dy) {
         aim.x += dx * AIM.keySpeed * dt;
         aim.y += dy * AIM.keySpeed * dt;
         input.resetPointer();
-      } else if (phase === 'aim') {
+      } else {
+        // Pointer aims in all three phases, so on touch you can press where you want and drag to adjust.
         const p = input.pointerOnGoalPlane(tmp);
         if (p) { aim.x = p.x; aim.y = p.y; }
       }
@@ -225,38 +278,38 @@ export async function createMatch({ world, canvas, params }) {
     } else if (phase === 'curve') {
       meter.curve = Math.sin((phaseT / CURVE_PERIOD) * Math.PI * 2);
       hud.meters(true, { power: meter.power, curve: meter.curve, curveActive: true });
-    } else if (phase === 'keeper' && phaseT > 1.2 && !striker.run) {
+    } else if (phase === 'keeper' && phaseT > 1.4 && !striker.run) {
       striker.runUp(SPOT, strike, 1.0);
       setPhase('runup');
     }
   }
 
+  const keeperWindow = () => kick?.keeperHuman && !kick.outcome && ['aim', 'power', 'curve', 'keeper', 'runup', 'flight'].includes(phase);
+
   input.on('primarydown', ({ source }) => {
-    if (phase === 'aim') {
-      setPhase('power');
-      hud.prompt('Release to set power — the red zone skies it');
-    } else if (phase === 'curve') {
-      beginRunUp();
-    } else if (phase === 'over' && source === 'key') {
-      restart();
-    } else if (kick?.team === 'away' && (phase === 'keeper' || phase === 'runup' || phase === 'flight') && source === 'pointer') {
+    if (paused) return;
+    if (phase === 'aim') setPhase('power');
+    else if (phase === 'curve') beginRunUp();
+    else if (!kick?.shooterHuman && keeperWindow() && source === 'pointer') {
+      // 1P in goal: click where to dive.
       const p = input.pointerOnGoalPlane(tmp);
       if (p) keeperChoice(p.x, p.y);
     }
   });
   input.on('primaryup', () => {
-    if (phase === 'power') {
-      setPhase('curve');
-      hud.prompt('Press SPACE / click to lock the curve');
-    }
+    if (!paused && phase === 'power') setPhase('curve');
   });
   input.on('key', (e) => {
-    if (kick?.team !== 'away' || !['keeper', 'runup', 'flight'].includes(phase)) return;
-    // From the keeper's-eye camera, screen right is −X.
-    const map = {
-      ArrowLeft: [2.6, 0.5], KeyA: [2.6, 0.5], ArrowRight: [-2.6, 0.5], KeyD: [-2.6, 0.5],
-      KeyQ: [2.6, 1.9], KeyE: [-2.6, 1.9], ArrowDown: [0, 0.5], KeyS: [0, 0.5], ArrowUp: [0, 2], KeyW: [0, 2],
-    };
+    if (paused || !keeperWindow()) return;
+    // Keys are screen-relative. From the keeper's-eye camera (1P in goal) screen-left is +X;
+    // from the shooter's camera (2P) it is −X.
+    const left = kick.shooterHuman ? -2.6 : 2.6;
+    const map = mode === '2p'
+      ? { KeyA: [left, 0.5], KeyD: [-left, 0.5], KeyQ: [left, 1.9], KeyE: [-left, 1.9], KeyS: [0, 0.5], KeyW: [0, 2] }
+      : {
+        ArrowLeft: [left, 0.5], KeyA: [left, 0.5], ArrowRight: [-left, 0.5], KeyD: [-left, 0.5],
+        KeyQ: [left, 1.9], KeyE: [-left, 1.9], ArrowDown: [0, 0.5], KeyS: [0, 0.5], ArrowUp: [0, 2], KeyW: [0, 2],
+      };
     const m = map[e.code];
     if (m) keeperChoice(m[0], m[1]);
   });
@@ -264,7 +317,7 @@ export async function createMatch({ world, canvas, params }) {
   function keeperChoice(x, y) {
     if (playerMove || kick.outcome) return;
     playerMove = moveForPoint(x, y);
-    hud.prompt('');
+    if (!kick.shooterHuman) hud.prompt('');
     if (phase === 'flight') keeper.dive(playerMove); // after the strike: go now
   }
 
@@ -309,11 +362,6 @@ export async function createMatch({ world, canvas, params }) {
     return { x: (_s.x * 0.5 + 0.5) * r.width, y: (-_s.y * 0.5 + 0.5) * r.height };
   }
 
-  function restart() {
-    shootout = createShootout();
-    startKick();
-  }
-
   startKick();
 
   return {
@@ -321,10 +369,20 @@ export async function createMatch({ world, canvas, params }) {
     get phase() { return phase; },
     get shootout() { return shootout; },
     get kick() { return kick; },
+    get paused() { return paused; },
     level,
-    /** Test hook: take the current home penalty without the meters. */
+    mode,
+    setPaused(p) {
+      paused = p;
+      if (p && phase === 'power') setPhase('aim'); // a held charge is cancelled, not fired, on pause
+    },
+    restart() {
+      shootout = createShootout();
+      startKick();
+    },
+    /** Test hook: take the current human penalty without the meters. */
     debugShoot(target, power = 0.7, curve = 0) {
-      if (kick.team !== 'home' || !['aim', 'power', 'curve'].includes(phase)) return false;
+      if (!kick.shooterHuman || !['aim', 'power', 'curve'].includes(phase)) return false;
       Object.assign(aim, target);
       meter.power = power;
       meter.curve = curve;
@@ -332,12 +390,15 @@ export async function createMatch({ world, canvas, params }) {
       return true;
     },
     debugKeeper(x, y) { keeperChoice(x, y); },
+    get debugInput() { return input; },
     /** Test hook: make the AI keeper's next save attempt a given move after `delay` seconds. */
     debugForceSave(move, delay = 0.02) { forcedSave = { delay, move }; },
     dispose() {
+      unsubscribe?.();
       input.dispose();
       hud.dispose();
       physics.dispose();
+      if (debugLines) { world.scene.remove(debugLines); debugLines.geometry.dispose(); debugLines.material.dispose(); }
     },
   };
 }

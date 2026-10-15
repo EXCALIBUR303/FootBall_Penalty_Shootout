@@ -61,6 +61,7 @@ export function createInput(canvas, camera) {
   return {
     on(type, fn) { listeners[type].push(fn); return () => listeners[type].splice(listeners[type].indexOf(fn), 1); },
     held: (...codes) => codes.some((c) => keys.has(c)),
+    get primaryHeld() { return primaryHeld; },
     /** Where the pointer ray meets the goal plane, or null if the pointer hasn't moved yet. */
     pointerOnGoalPlane(out = new THREE.Vector3()) {
       if (!pointerSeen) return null;
