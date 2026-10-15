@@ -199,6 +199,8 @@ export function createUI(handlers, root = document.getElementById('ui')) {
   // --- Public API ----------------------------------------------------------------------------
   return {
     showMenu() { inMatch = false; closeAll(); showScreen('menu'); },
+    /** A match started without the setup screen (dev ?play): hide screens and enable pause. */
+    enterMatch() { closeAll(); showScreen(null); inMatch = true; },
     /** Match finished: show the end dialog. */
     showEnd({ winner, home, away, score, mode: m, kicks }) {
       const w = winner === 'home' ? home : away;

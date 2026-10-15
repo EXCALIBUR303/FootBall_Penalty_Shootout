@@ -124,6 +124,7 @@ async function boot() {
   if (import.meta.env.DEV && params.has('pose')) {
     (await import('./dev/pose-preview.js')).applyPosePreview(world, params);
   } else if (playable && import.meta.env.DEV && params.has('play')) {
+    ui.enterMatch(); // so Esc / P pause works as in a normal match
     await startMatch({ mode: params.get('mode') ?? '1p', difficulty: params.get('difficulty') ?? 'normal' });
   } else if (playable) {
     ui.showMenu();
