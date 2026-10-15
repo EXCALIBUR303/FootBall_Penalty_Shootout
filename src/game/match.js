@@ -8,7 +8,6 @@ import { createInput } from './input.js';
 import { Director, SHOTS } from '../camera/director.js';
 import { createHud } from '../ui/hud.js';
 import { KEEPER_LIMBS } from '../actors/keeper.js';
-import { setKit } from '../world/scene.js';
 import { KEEPER_KIT, TEAMS } from './teams.js';
 import { createEffects } from '../fx/effects.js';
 import { Recorder } from './replay.js';
@@ -60,7 +59,7 @@ export async function createMatch({ world, canvas, params, options = {}, setting
   let replays = 0; // alternates the camera angle
   let slow = null; // { left, total, from } — brief slow-motion after a goal or save
   const rand = Math.random;
-  setKit(keeper.root, KEEPER_KIT);
+  world.kits.keeper?.set(KEEPER_KIT);
 
   const unsubscribe = settings?.subscribe((k, v) => {
     if (k === 'reducedMotion') director.reducedMotion = v;
@@ -103,7 +102,7 @@ export async function createMatch({ world, canvas, params, options = {}, setting
     syncBall();
     keeper.ready();
     striker.setUp(SPOT);
-    setKit(striker.root, teams[team].color);
+    world.kits.striker?.set(teams[team].kit ?? TEAMS[0].kit);
     hud.result(null);
     hud.meters(false);
     hud.setScore(shootout, { round: currentRound(shootout), suddenDeath: isSuddenDeath(shootout) });

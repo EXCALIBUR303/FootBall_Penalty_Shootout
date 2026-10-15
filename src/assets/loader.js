@@ -41,9 +41,9 @@ export async function loadAssets(entries, onProgress) {
         assertFormat(entry, buf);
         // Parse after download so progress reflects network, not CPU decode time.
         assets[entry.id] =
-          entry.type === 'glb'
-            ? await gltf.parseAsync(buf, entry.url.replace(/[^/]*$/, ''))
-            : rgbe.parse(buf);
+          entry.type === 'glb' ? await gltf.parseAsync(buf, entry.url.replace(/[^/]*$/, ''))
+          : entry.type === 'image' ? await decodeImage(buf)
+          : rgbe.parse(buf);
       } catch (err) {
         (entry.optional ? optionalMissing : missing).push(`${entry.label} (${entry.url}): ${err.message}`);
         loaded.set(entry.id, 1);
@@ -55,6 +55,22 @@ export async function loadAssets(entries, onProgress) {
   draco.dispose(); // frees the decoder workers once everything is parsed
   report('Ready');
   return { assets, missing, optionalMissing };
+}
+
+/**
+ * Decodes JPEG/PNG bytes into an <img>. (An HTMLImageElement rather than createImageBitmap: it honours the
+ * texture's flipY in every browser, Safari included.)
+ */
+async function decodeImage(buf) {
+  const url = URL.createObjectURL(new Blob([buf]));
+  try {
+    const img = new Image();
+    img.src = url;
+    await img.decode();
+    return img;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
 }
 
 async function fetchWithProgress(url, onChunk) {
@@ -87,4 +103,10 @@ function assertFormat(entry, buf) {
   const head = new TextDecoder().decode(new Uint8Array(buf, 0, Math.min(10, buf.byteLength)));
   if (entry.type === 'glb' && !head.startsWith('glTF')) throw new Error('not a GLB file (file missing?)');
   if (entry.type === 'hdr' && !head.startsWith('#?')) throw new Error('not a Radiance .hdr file (file missing?)');
+  if (entry.type === 'image') {
+    const b = new Uint8Array(buf, 0, 4);
+    const jpeg = b[0] === 0xff && b[1] === 0xd8;
+    const png = b[0] === 0x89 && b[1] === 0x50;
+    if (!jpeg && !png) throw new Error('not a JPEG/PNG image (file missing?)');
+  }
 }

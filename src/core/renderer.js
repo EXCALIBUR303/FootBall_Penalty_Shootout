@@ -4,7 +4,12 @@ import { preset } from './quality.js';
 export function createRenderer(canvas) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
   renderer.outputColorSpace = THREE.SRGBColorSpace;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  // Neutral (Khronos PBR Neutral) rather than ACES: the stadium is a display-referred photo, and Neutral leaves
+  // everything below ~0.8 untouched, so the backdrop keeps its grading while bright HDR highlights on the
+  // players, ball and goal still roll off smoothly. ACES desaturated and lifted the photo (washed-out stands).
+  // `?tm=aces` (dev) switches back for comparison.
+  const aces = import.meta.env.DEV && new URLSearchParams(location.search).get('tm') === 'aces';
+  renderer.toneMapping = aces ? THREE.ACESFilmicToneMapping : THREE.NeutralToneMapping;
   renderer.toneMappingExposure = 1.0;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFShadowMap; // PCFSoftShadowMap was removed; PCF is now the soft filter
