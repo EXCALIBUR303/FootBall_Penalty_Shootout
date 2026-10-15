@@ -11,8 +11,8 @@ export const GAME_ASSETS = [
   { id: 'stadium', type: 'glb', url: 'assets/models/stadium.glb', label: 'stadium' },
   { id: 'goal', type: 'glb', url: 'assets/models/goal.glb', label: 'goal' },
   { id: 'ball', type: 'glb', url: 'assets/models/ball.glb', label: 'ball' },
-  { id: 'keeper', type: 'glb', url: 'assets/models/keeper.glb', label: 'goalkeeper' },
-  { id: 'striker', type: 'glb', url: 'assets/models/striker.glb', label: 'striker' },
+  // One Quaternius rig serves both players; the scene clones it per role and tints the kit.
+  { id: 'character', type: 'glb', url: 'assets/models/character.glb', label: 'players' },
 ];
 
 // Pipeline smoke test (`?test=1`): Khronos sample models stand in for keeper and striker so the

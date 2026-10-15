@@ -75,5 +75,10 @@ what was tested, decisions needed).
 - Approved decisions: Rapier, vanilla JS, no Sketchfab/Freesound, keyframed missing clips, Kenney Fonts,
   textured pitch plane only if the stadium has none.
 
+- Phase 1 status: HDRI (also used as pitch + stands via GroundedSkybox), ball, and one shared Quaternius
+  character (cloned + tinted for keeper/striker) are in. GOAL and STADIUM GLBs are still missing: Poly Pizza is
+  behind Cloudflare, Sketchfab downloads need login. Drop them in assets/raw/, run `npm run assets`, and add
+  the files to src/assets/manifest.js (ids `goal`, `stadium` already listed).
+- Quaternius UAL has NO dive/parry/kick clips: author them as keyframed clips in Phase 2.
 - Phase 0 plan lives in `docs/PLAN.md`.
 - Git branch for development: `claude/3d-football-penalty-shootout-q6sult`.
