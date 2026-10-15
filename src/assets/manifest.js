@@ -3,13 +3,16 @@
 //
 // Pitch space (metres): goal line at z = 0, goal faces +z, penalty spot at z = 11, x is left/right, y is up.
 
-/** @typedef {{ id: string, type: 'glb' | 'hdr', url: string, label: string }} AssetEntry */
+/**
+ * @typedef {{ id: string, type: 'glb' | 'hdr', url: string, label: string, optional?: boolean }} AssetEntry
+ * optional: the game works without it (logged, not shown as an error).
+ */
 
 /** @type {AssetEntry[]} */
 export const GAME_ASSETS = [
   { id: 'hdri', type: 'hdr', url: 'assets/hdri/stadium_01_2k.hdr', label: 'sky' },
-  { id: 'stadium', type: 'glb', url: 'assets/models/stadium.glb', label: 'stadium' },
-  { id: 'goal', type: 'glb', url: 'assets/models/goal.glb', label: 'goal' },
+  { id: 'stadium', type: 'glb', url: 'assets/models/stadium.glb', label: 'stadium', optional: true }, // HDRI covers it
+  { id: 'goal', type: 'glb', url: 'assets/models/goal.glb', label: 'goal', optional: true }, // physics goal exists regardless
   { id: 'ball', type: 'glb', url: 'assets/models/ball.glb', label: 'ball' },
   // One Quaternius rig serves both players; the scene clones it per role and tints the kit.
   { id: 'character', type: 'glb', url: 'assets/models/character.glb', label: 'players' },
@@ -26,7 +29,7 @@ export const TEST_ASSETS = [
 
 /** Target real-world sizes used to normalise whatever model is dropped in (metres). */
 export const TARGET_SIZE = {
-  goalWidth: 7.32, // inside of the posts
+  goalOuterWidth: 7.56, // 7.32 m between the posts + two 12 cm posts
   ballDiameter: 0.22,
   keeperHeight: 1.88,
   strikerHeight: 1.80,

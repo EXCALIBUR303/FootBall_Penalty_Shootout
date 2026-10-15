@@ -8,7 +8,7 @@ import { HDRLoader } from 'three/examples/jsm/loaders/HDRLoader.js';
  *
  * @param {import('./manifest.js').AssetEntry[]} entries
  * @param {(p: { fraction: number, label: string, loaded: number, total: number }) => void} onProgress
- * @returns {Promise<{ assets: Record<string, any>, missing: string[] }>}
+ * @returns {Promise<{ assets: Record<string, any>, missing: string[], optionalMissing: string[] }>}
  */
 export async function loadAssets(entries, onProgress) {
   const draco = new DRACOLoader().setDecoderPath('draco/');
@@ -28,6 +28,7 @@ export async function loadAssets(entries, onProgress) {
 
   const assets = {};
   const missing = [];
+  const optionalMissing = [];
 
   await Promise.all(
     entries.map(async (entry) => {
@@ -44,7 +45,7 @@ export async function loadAssets(entries, onProgress) {
             ? await gltf.parseAsync(buf, entry.url.replace(/[^/]*$/, ''))
             : rgbe.parse(buf);
       } catch (err) {
-        missing.push(`${entry.label} (${entry.url}): ${err.message}`);
+        (entry.optional ? optionalMissing : missing).push(`${entry.label} (${entry.url}): ${err.message}`);
         loaded.set(entry.id, 1);
         totals.set(entry.id, 1);
       }
@@ -53,7 +54,7 @@ export async function loadAssets(entries, onProgress) {
 
   draco.dispose(); // frees the decoder workers once everything is parsed
   report('Ready');
-  return { assets, missing };
+  return { assets, missing, optionalMissing };
 }
 
 async function fetchWithProgress(url, onChunk) {

@@ -79,6 +79,10 @@ what was tested, decisions needed).
   character (cloned + tinted for keeper/striker) are in. GOAL and STADIUM GLBs are still missing: Poly Pizza is
   behind Cloudflare, Sketchfab downloads need login. Drop them in assets/raw/, run `npm run assets`, and add
   the files to src/assets/manifest.js (ids `goal`, `stadium` already listed).
-- Quaternius UAL has NO dive/parry/kick clips: author them as keyframed clips in Phase 2.
+- Quaternius UAL has NO dive/parry/kick clips: authored in src/actors/clips.js (character-space angles,
+  converted per bone by src/actors/pose.js). Preview with `/?pose=low&side=1&t=0.42` (dev only).
+- Phase 2 dev tools: `/?debug` draws Rapier colliders; `/?timescale=4` fast-forwards (dev only);
+  scripts/play-test.mjs (full shootout), scripts/balance.mjs (AI save rates), scripts/probe-dive.mjs.
+  `npm test` runs node unit tests (rules, shot solver, Rapier physics).
 - Phase 0 plan lives in `docs/PLAN.md`.
 - Git branch for development: `claude/3d-football-penalty-shootout-q6sult`.

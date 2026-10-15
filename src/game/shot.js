@@ -42,7 +42,7 @@ export function solveShot(ballPos, target, power, curve, rand = Math.random) {
 
   // Errors: overpower lifts the ball (up to ~1.6 m extra at 100%), and harder shots wobble more.
   const over = Math.max(0, power - SHOT.sweetSpot) / (1 - SHOT.sweetSpot);
-  const wobble = 0.05 + 0.25 * power * power; // radians-ish scale applied as metres at the goal
+  const wobble = 0.08 + 0.34 * power * power; // metres of random error at the goal line
   const errX = (rand() * 2 - 1) * wobble;
   const errY = (rand() * 2 - 1) * wobble * 0.6 + over * 1.6;
   if (errX || errY) vel = launchTowards(ballPos, { x: aim.x + errX, y: aim.y + errY }, speed);
