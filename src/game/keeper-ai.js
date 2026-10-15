@@ -12,9 +12,9 @@ import { predictCrossing } from '../physics/aero.js';
  */
 export const DIFFICULTY = {
   easy: { reaction: 0.36, readError: 0.9, guess: 0.35, reach: 0.85, speed: 0.85, catchBelow: 13, memory: 0 },
-  normal: { reaction: 0.22, readError: 0.5, guess: 0.55, reach: 1.05, speed: 1.05, catchBelow: 17, memory: 0.4 },
+  normal: { reaction: 0.2, readError: 0.42, guess: 0.58, reach: 1.08, speed: 1.08, catchBelow: 17, memory: 0.4 },
   hard: { reaction: 0.16, readError: 0.32, guess: 0.6, reach: 1.1, speed: 1.12, catchBelow: 20, memory: 0.6 },
-  legend: { reaction: 0.12, readError: 0.22, guess: 0.6, reach: 1.15, speed: 1.2, catchBelow: 23, memory: 0.8 },
+  legend: { reaction: 0.09, readError: 0.12, guess: 0.7, reach: 1.25, speed: 1.3, catchBelow: 23, memory: 0.8 },
 };
 
 /** Gaussian sample (Box–Muller). */
