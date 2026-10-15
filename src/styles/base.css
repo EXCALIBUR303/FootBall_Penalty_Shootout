@@ -1,9 +1,19 @@
 *, *::before, *::after { box-sizing: border-box; }
-html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font-family: var(--font-ui); font-size: 16px; overflow: hidden; }
+html, body {
+  margin: 0; height: 100%; background: var(--c-bg); color: var(--c-text);
+  font-family: var(--font-ui); font-size: 16px; line-height: 1.4; overflow: hidden;
+  -webkit-font-smoothing: antialiased; -webkit-text-size-adjust: 100%;
+}
 #game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; outline: none; touch-action: none; }
-#ui { position: fixed; inset: 0; pointer-events: none; }
+/* Subtle broadcast vignette over the 3D view: same in High and Low quality (it is CSS, not a render pass). */
+body::after {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background: radial-gradient(ellipse 120% 90% at 50% 45%, transparent 62%, rgb(0 0 0 / 0.28));
+}
+#ui { position: fixed; inset: 0; pointer-events: none; z-index: 1; }
 /* Screens and dialogs take input; the HUD layer is click-through except for its own buttons. */
 #ui > *:not(.hud) { pointer-events: auto; }
-:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+:focus-visible { outline: 3px solid var(--c-pitch); outline-offset: 3px; border-radius: var(--r-sm); }
 /* Component CSS often sets display; make the hidden attribute always win. */
 [hidden] { display: none !important; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

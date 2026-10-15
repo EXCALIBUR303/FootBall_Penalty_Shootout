@@ -21,7 +21,6 @@ const RESULT_HOLD_BEFORE_REPLAY = 1.7; // shorter when a replay follows
 const REPLAY_RATE = 0.6; // playback speed of the replay
 const REPLAY_LEAD = 0.7; // seconds of run-up shown before the strike
 
-const RESULT_TEXT = { goal: 'Goal!', saved: 'Saved!', post: 'Off the woodwork!', miss: 'Missed!' };
 
 /**
  * Match controller: a small state machine around one penalty at a time.
@@ -105,7 +104,7 @@ export async function createMatch({ world, canvas, params, options = {}, setting
     world.kits.striker?.set(teams[team].kit ?? TEAMS[0].kit);
     hud.result(null);
     hud.meters(false);
-    hud.setScore(shootout, { round: currentRound(shootout), suddenDeath: isSuddenDeath(shootout) });
+    hud.setScore(shootout, { round: currentRound(shootout), suddenDeath: isSuddenDeath(shootout), shooting: team });
     kick = { team, shooterHuman, keeperHuman, touchedKeeper: false, woodwork: false, held: false, outcome: null, t: 0 };
     pendingSave = null;
     playerMove = null;
@@ -118,7 +117,7 @@ export async function createMatch({ world, canvas, params, options = {}, setting
     const who = mode === '1p'
       ? (team === 'home' ? 'Your kick' : "You're in goal")
       : `${team === 'home' ? 'Player 1' : 'Player 2'} to shoot`;
-    hud.turn(who, team);
+    hud.turn(who, team, teams[team].name);
 
     if (shooterHuman) {
       aim.x = 0; aim.y = 1.2;
@@ -175,9 +174,11 @@ export async function createMatch({ world, canvas, params, options = {}, setting
     kick.outcome = outcome;
     const scored = outcome === 'goal';
     recordKick(shootout, scored);
-    hud.result(outcome, RESULT_TEXT[outcome]);
-    hud.setScore(shootout, { round: currentRound(shootout), suddenDeath: isSuddenDeath(shootout) });
-    director.cut(SHOTS.reaction(scored ? 'goal' : 'save', ball.position.clone()));
+    // Caption accent: the scoring team for a goal, the keeper's team for a save, the shooter's otherwise.
+    const defending = kick.team === 'home' ? 'away' : 'home';
+    hud.result(outcome, resultTitle(outcome), resultSub(outcome), outcome === 'saved' ? defending : kick.team);
+    hud.setScore(shootout, { round: currentRound(shootout), suddenDeath: isSuddenDeath(shootout), shooting: null });
+    director.cut(SHOTS.reaction(scored ? 'goal' : 'save', ball.position.clone(), keeper.root.position.x));
     striker.react(scored ? 'celebrate' : 'dejected');
     if (!scored && kick.touchedKeeper) keeper.react('celebrate');
     recorder.mark('result');
@@ -188,13 +189,35 @@ export async function createMatch({ world, canvas, params, options = {}, setting
     onEvent('result', { team: kick.team, outcome, score: { home: score(shootout, 'home'), away: score(shootout, 'away') } });
   }
 
+  /** Caption title: what happened, as specifically as the physics knows it. */
+  function resultTitle(outcome) {
+    if (outcome === 'goal') return 'Goal';
+    if (outcome === 'saved') return 'Saved';
+    if (outcome === 'post') return kick.woodworkType === 'bar' ? 'Off the bar' : 'Off the post';
+    const p = physics.ball.translation();
+    return p.y > GOAL.height && Math.abs(p.x) < GOAL.halfWidth + 1 ? 'Over the bar' : 'Wide';
+  }
+  /** Caption sub-line: a detail for saves, then the score. */
+  function resultSub(outcome) {
+    const detail = outcome === 'saved' ? (kick.held ? 'Held · ' : 'Pushed away · ') : '';
+    return detail + scoreLine();
+  }
+  /** The shootout score from the leader's point of view. */
+  function scoreLine() {
+    const h = score(shootout, 'home'), a = score(shootout, 'away');
+    if (shootout.winner) return `${teams[shootout.winner].name} win ${Math.max(h, a)}–${Math.min(h, a)}`;
+    if (h === a) return `Level at ${h}–${a}`;
+    const lead = h > a ? 'home' : 'away';
+    return `${teams[lead].name} lead ${Math.max(h, a)}–${Math.min(h, a)}`;
+  }
+
   /** After a kick (and its replay): the next kick, or the end of the shootout. */
   function advance() {
     if (shootout.winner) {
       setPhase('over');
       hud.result(null);
       onEvent('over', {
-        winner: shootout.winner, mode, home: teams.home, away: teams.away,
+        winner: shootout.winner, mode, home: teams.home, away: teams.away, kicks: { home: [...shootout.kicks.home], away: [...shootout.kicks.away] },
         score: { home: score(shootout, 'home'), away: score(shootout, 'away') },
       });
     } else {
@@ -253,17 +276,18 @@ export async function createMatch({ world, canvas, params, options = {}, setting
   }
 
   // --- Prompts / onboarding -------------------------------------------------------------------
+  /** Contextual controls for the current phase (key caps + verb), instead of instruction sentences. */
   function refreshPrompt() {
-    if (!get('hints', true)) return hud.prompt('');
-    const keeperKeys2p = 'Keeper: A D low · Q E high · S block · W jump';
-    if (phase === 'replay') return hud.prompt('Press Space or click to skip the replay'); // always shown: it is the only control
-    const text = {
-      aim: mode === '2p' ? `Aim with the mouse or arrows · hold SPACE for power — ${keeperKeys2p}` : 'Aim with the mouse or arrows · hold SPACE (or press and hold) for power',
-      power: 'Release to set power — the striped end skies it',
-      curve: 'Press again to lock the curve',
-      keeper: 'Click where to dive — or ← → low · Q E high · ↓ block · ↑ jump',
-    }[phase] ?? '';
-    hud.prompt(text);
+    if (phase === 'replay') return hud.hints([['Space', 'Skip replay']]); // always shown: it is the only control
+    if (!get('hints', true)) return hud.hints([]);
+    const keeper2p = [['A / D', 'Low dive'], ['Q / E', 'High dive'], ['S', 'Block'], ['W', 'Jump']];
+    const items = {
+      aim: [[mode === '2p' ? '← → ↑ ↓' : 'Mouse / ←→↑↓', 'Aim'], ['Hold Space', 'Power'], ...(mode === '2p' ? keeper2p : [])],
+      power: [['Release', 'Lock power']],
+      curve: [['Space', 'Lock curve']],
+      keeper: [['Click', 'Dive there'], ['← / →', 'Low dive'], ['Q / E', 'High dive'], ['↓', 'Block'], ['↑', 'Jump']],
+    }[phase] ?? [];
+    hud.hints(items);
   }
   function refreshCoach() {
     hud.coach(coaching && kick?.shooterHuman && ['aim', 'power', 'curve'].includes(phase) ? phase : null);
@@ -274,12 +298,13 @@ export async function createMatch({ world, canvas, params, options = {}, setting
     if (!kick || kick.outcome || phase !== 'flight') return;
     if (e.type === 'post' || e.type === 'bar') {
       kick.woodwork = true;
+      kick.woodworkType ??= e.type;
       director.addShake(0.06);
       fx.hit(ball.position, e.speed);
       onEvent('woodwork', { type: e.type, speed: e.speed, x: ball.position.x });
     } else if (e.type === 'keeper' && !kick.touchedKeeper) {
       kick.touchedKeeper = true;
-      fx.hit(ball.position, e.speed, 0xc6f432);
+      fx.hit(ball.position, e.speed, 0xfff2cf); // glove contact: warm white
       // Clean contact on a slower ball = catch and hold; otherwise the physics parries it.
       const catchBelow = kick.keeperHuman ? DIFFICULTY.normal.catchBelow : ai.catchBelow;
       if (e.speed < catchBelow) kick.held = true;
@@ -349,6 +374,12 @@ export async function createMatch({ world, canvas, params, options = {}, setting
   }
 
   function handlePhaseInput(dt) {
+    // 1P in goal: a dive marker follows the pointer until a dive is chosen.
+    if (kick && !kick.shooterHuman && mode === '1p') {
+      const n = !playerMove && keeperWindow() ? input.pointerNdc() : null;
+      const r = canvas.getBoundingClientRect();
+      hud.reticle(n ? { x: (n.x * 0.5 + 0.5) * r.width, y: (-n.y * 0.5 + 0.5) * r.height } : null, 'keeper');
+    }
     if (phase === 'aim' || phase === 'power' || phase === 'curve') {
       // Keyboard aiming. In 2P the keeper owns WASD, so the shooter aims with the arrows only.
       const R = mode === '2p' ? ['ArrowRight'] : ['ArrowRight', 'KeyD'];
@@ -434,7 +465,7 @@ export async function createMatch({ world, canvas, params, options = {}, setting
   function keeperChoice(x, y) {
     if (playerMove || kick.outcome) return;
     playerMove = moveForPoint(x, y);
-    if (!kick.shooterHuman) hud.prompt('');
+    if (!kick.shooterHuman) { hud.hints([]); hud.reticle(null); }
     if (phase === 'flight') keeper.dive(playerMove); // after the strike: go now
   }
 
