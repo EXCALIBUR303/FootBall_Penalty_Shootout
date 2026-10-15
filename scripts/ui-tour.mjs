@@ -18,6 +18,8 @@ const log = async (label) => steps.push(`${label}: focus="${await focused()}"`);
 await page.addInitScript(() => { if (!sessionStorage.getItem('tour')) { localStorage.clear(); sessionStorage.setItem('tour', '1'); } });
 await page.goto('http://localhost:5173/');
 await page.waitForSelector('[data-screen="menu"]:not([hidden])', { timeout: 30000 });
+// Software GL is ~2 fps with bloom, so QA runs on Low with replays off (replays have their own test).
+await page.evaluate(() => { window.__game.settings.set('quality', 'low'); window.__game.settings.set('autoReplay', false); });
 await log('menu'); await shot('01-menu');
 await page.keyboard.press('Tab'); await log('menu tab'); await page.keyboard.press('Tab'); await log('menu tab2');
 await page.keyboard.press('Tab'); await page.keyboard.press('Enter'); await log('settings (from menu)'); await shot('02-settings');

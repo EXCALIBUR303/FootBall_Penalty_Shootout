@@ -14,7 +14,7 @@ await page.waitForFunction(() => window.__game, null, { timeout: 30000 });
 await page.waitForTimeout(2500);
 const info = await page.evaluate(() => {
   const g = window.__game;
-  return { actors: Object.keys(g.assets), mixers: g.mixers.length, missing: g.missing, calls: g.renderer.info.render.calls, tris: g.renderer.info.render.triangles };
+  return { actors: Object.keys(g.assets), missing: g.missing, calls: g.renderer.info.render.calls, tris: g.renderer.info.render.triangles };
 });
 await page.screenshot({ path: 'docs/phase1-smoke.png' });
 console.log(JSON.stringify(info, null, 2));
