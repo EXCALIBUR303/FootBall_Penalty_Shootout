@@ -13,7 +13,7 @@ export class Director {
     this.fov = camera.fov;
     this.vel = { pos: new THREE.Vector3(), target: new THREE.Vector3(), fov: 0 };
     this.shot = null;
-    this.reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    this.reducedMotion = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
     this.shake = 0;
   }
 
@@ -44,10 +44,7 @@ export class Director {
     const k = want.stiffness ?? 6;
     spring(this.pos, want.pos, this.vel.pos, k, dt);
     spring(this.target, want.target, this.vel.target, k * 1.4, dt);
-    const fovWant = want.fov ?? this.fov;
-    const a = k * k * (fovWant - this.fov) - 2 * k * this.vel.fov;
-    this.vel.fov += a * dt;
-    this.fov += this.vel.fov * dt;
+    [this.fov, this.vel.fov] = spring1(this.fov, want.fov ?? this.fov, this.vel.fov, k, dt);
 
     const cam = this.camera;
     cam.position.copy(this.pos);
@@ -64,12 +61,19 @@ export class Director {
   }
 }
 
-const _d = new THREE.Vector3();
+/**
+ * Critically damped spring x'' = k²(goal − x) − 2k x', advanced with its exact solution, so it is stable for
+ * any frame time. (The old semi-implicit Euler step blew up once k·dt passed ~2 — at a low frame rate the
+ * camera was flung out of the stadium and rendered a black frame.)
+ */
+function spring1(x, goal, v, k, dt) {
+  const e = Math.exp(-k * dt);
+  const c = x - goal;
+  const t = (v + k * c) * dt;
+  return [goal + (c + t) * e, (v - k * t) * e];
+}
 function spring(value, goal, vel, k, dt) {
-  // x'' = k²(goal − x) − 2k x'  (critical damping); semi-implicit Euler is stable at these rates
-  _d.subVectors(goal, value).multiplyScalar(k * k).addScaledVector(vel, -2 * k);
-  vel.addScaledVector(_d, dt);
-  value.addScaledVector(vel, dt);
+  for (const a of ['x', 'y', 'z']) [value[a], vel[a]] = spring1(value[a], goal[a], vel[a], k, dt);
 }
 
 // --- Shots -------------------------------------------------------------------------------------
@@ -87,13 +91,20 @@ export const SHOTS = {
     fov: 40,
     stiffness: 4,
   }),
-  /** Run-up: low angle from the striker's left, slowly pushing in. */
-  runUp: (ball) => (t) => ({
-    pos: v(ball.x - 4.2 + Math.min(t, 1.3) * 0.9, 1.15, ball.z + 2.6 - Math.min(t, 1.3) * 0.6),
-    target: v(ball.x - 0.2, 0.7, ball.z - 1),
-    fov: 42 - Math.min(t, 1.3) * 3,
-    stiffness: 5,
-  }),
+  /**
+   * Run-up: over the striker's left shoulder, looking down the pitch at the goal, slowly pushing in. Same
+   * general direction as the aim and follow shots, so the cuts between them never swing the view away from
+   * the striker, ball and goal (the old side-on angle ended up framing empty grass at the strike).
+   */
+  runUp: (ball) => (t) => {
+    const u = Math.min(t, 1.2) / 1.2;
+    return {
+      pos: v(ball.x - 2.5 + u * 0.6, 1.55 - u * 0.15, ball.z + 5.2 - u * 1.2),
+      target: v(ball.x * 0.4 + 0.1, 0.95, 3.5),
+      fov: 36 - u * 2,
+      stiffness: 5,
+    };
+  },
   /** Follows the ball in flight, then holds a goal-mouth framing as it arrives. */
   follow: (getBall) => () => {
     const b = getBall();
@@ -110,11 +121,15 @@ export const SHOTS = {
    * the lens: a goal is seen from the opposite side of the box looking into the corner the ball went in;
    * a save or miss side-on to the keeper.
    */
-  reaction: (kind, ball) => (t) => {
+  reaction: (kind, ball, keeperX = 0) => (t) => {
     const side = ball.x >= 0 ? 1 : -1;
-    return kind === 'goal'
-      ? { pos: v(-side * 3.4 + ball.x * 0.25, 1.45 + t * 0.05, 6.2 - t * 0.25), target: v(ball.x * 0.75, Math.max(0.8, ball.y * 0.7), -0.4), fov: 38, stiffness: 3 }
-      : { pos: v(6.5 - t * 0.4, 1.5, 3.5), target: v(0, 0.9, 0.3), fov: 40, stiffness: 3 };
+    if (kind === 'goal') {
+      return { pos: v(-side * 3.4 + ball.x * 0.25, 1.45 + t * 0.05, 6.2 - t * 0.25), target: v(ball.x * 0.75, Math.max(0.8, ball.y * 0.7), -0.4), fov: 38, stiffness: 3 };
+    }
+    // Save or miss: the same front-diagonal, centred on the keeper (who may be lying on either side).
+    const k = THREE.MathUtils.clamp(keeperX, -3, 3);
+    const kside = k >= 0 ? 1 : -1;
+    return { pos: v(-kside * 2.8 + k * 0.4, 1.35 + t * 0.05, 6.6 - t * 0.25), target: v(k * 0.85, 0.7, 0.2), fov: 40, stiffness: 3 };
   },
   /**
    * Player in goal: just inside the goal mouth, above and behind the keeper's head, looking out at the
@@ -130,7 +145,15 @@ export const SHOTS = {
   replay: (angle, side, getBall) => () => {
     const b = getBall();
     if (angle === 'goalline') {
-      return { pos: v(-side * 6.2, 0.75, 1.6), target: v(b.x * 0.7, Math.max(0.6, b.y * 0.85), Math.min(Math.max(b.z, 0), 8) * 0.6), fov: 40, stiffness: 6 };
+      // Low, just in front of the line beyond the far post, looking across the goal mouth: the keeper
+      // dives towards the lens and the ball arrives from the right of frame. Eases onto the ball late on.
+      const near = THREE.MathUtils.clamp(1 - b.z / 6, 0, 1);
+      return {
+        pos: v(-side * 7.2, 1.05, 1.9),
+        target: v(side * 1.2 * (1 - near) + b.x * near, 1.0 + (b.y - 1.0) * near * 0.6, 2.2 * (1 - near) + Math.max(b.z, 0) * near),
+        fov: 36,
+        stiffness: 5,
+      };
     }
     if (angle === 'striker') {
       return { pos: v(-0.6, 3.1, 18.5), target: v(b.x * 0.35, 1.0, Math.min(b.z, 11) * 0.3), fov: 34, stiffness: 5 };
