@@ -43,7 +43,10 @@ export function createHud({ home, away }, root = document.getElementById('ui')) 
         <div class="meter__track"><div class="meter__centre"></div><div class="meter__mark"></div></div>
       </div>
     </div>
-    <div class="hud__result" role="status" aria-live="assertive"></div>`;
+    <div class="hud__result" role="status" aria-live="assertive"></div>
+    <div class="hud__bars" aria-hidden="true"></div>
+    <div class="hud__replay" hidden><span class="hud__rec" aria-hidden="true"></span>Replay</div>
+    <div class="hud__flash" aria-hidden="true"></div>`;
   root.appendChild(el);
 
   const $ = (s) => el.querySelector(s);
@@ -114,6 +117,17 @@ export function createHud({ home, away }, root = document.getElementById('ui')) 
       result.textContent = text ?? '';
       result.dataset.kind = kind ?? '';
       result.classList.toggle('is-shown', Boolean(kind));
+    },
+    /** Replay mode: letterbox bars and the REPLAY badge. */
+    replay(on) {
+      el.classList.toggle('is-replay', on);
+      $('.hud__replay').hidden = !on;
+    },
+    /** Quick full-screen colour pulse on a goal or a save. */
+    flash(kind) {
+      const f = $('.hud__flash');
+      f.dataset.kind = kind;
+      f.classList.remove('is-on'); void f.offsetWidth; f.classList.add('is-on');
     },
     dispose() { clearTimeout(turnTimer); el.remove(); },
   };

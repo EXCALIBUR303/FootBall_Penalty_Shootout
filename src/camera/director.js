@@ -106,6 +106,18 @@ export const SHOTS = {
     kind === 'goal'
       ? { pos: v(ball.x * 0.4 + 1.2, 1.9 + t * 0.1, -7.5 + t * 0.6), target: v(ball.x * 0.6, 1.0, 1.0), fov: 42, stiffness: 3 }
       : { pos: v(6.5 - t * 0.4, 1.5, 3.5), target: v(0, 0.9, 0.3), fov: 40, stiffness: 3 },
+  /**
+   * Replay cameras. 'side': low, wide angle from the side of the penalty area, following the ball.
+   * 'behind': from behind the goal line looking back up the pitch, so the ball flies at the lens.
+   * `side` (±1) is the side the shot went to.
+   */
+  replay: (angle, side, getBall) => () => {
+    const b = getBall();
+    if (angle === 'behind') {
+      return { pos: v(-side * 2.4, 1.4, -6.5), target: v(b.x * 0.6, Math.max(0.8, b.y * 0.8), Math.min(Math.max(b.z, -1), 9)), fov: 44, stiffness: 6 };
+    }
+    return { pos: v(-side * 9, 1.5, 6.5), target: v(b.x * 0.85, Math.max(0.7, b.y), Math.min(Math.max(b.z, 0.5), 9)), fov: 36, stiffness: 6 };
+  },
   /** Player in goal: just behind the keeper, looking out at the striker. */
   keeperView: () => () => ({ pos: v(0, 1.85, -3.2), target: v(0, 1.0, 11), fov: 52, stiffness: 5 }),
 };

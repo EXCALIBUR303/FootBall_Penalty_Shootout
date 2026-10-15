@@ -154,7 +154,7 @@ export function createUI(handlers, root = document.getElementById('ui')) {
   // --- Settings ----------------------------------------------------------------------------
   const bindings = [
     ['quality', 'radio'], ['masterVolume', 'range'], ['crowdVolume', 'range'],
-    ['muted', 'check'], ['reducedMotion', 'check'], ['hints', 'check'],
+    ['muted', 'check'], ['reducedMotion', 'check'], ['hints', 'check'], ['autoReplay', 'check'],
   ];
   for (const [key, kind] of bindings) {
     if (kind === 'radio') {
@@ -280,6 +280,7 @@ const TEMPLATE = /* html */ `
     <label class="check"><input type="checkbox" name="muted"><span>Mute all sound</span></label>
     <label class="check"><input type="checkbox" name="reducedMotion"><span>Reduced motion <small>(cuts instead of camera moves, no shake)</small></span></label>
     <label class="check"><input type="checkbox" name="hints"><span>Show hints</span></label>
+    <label class="check"><input type="checkbox" name="autoReplay"><span>Auto replay <small>(goals, saves and woodwork)</small></span></label>
     <button class="btn btn--primary" data-action="close">Done</button>
   </div>
 </div>

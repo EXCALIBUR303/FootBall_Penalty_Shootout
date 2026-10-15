@@ -9,6 +9,7 @@ const DEFAULTS = {
   muted: false,
   reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
   hints: true,
+  autoReplay: true, // replay goals, saves and woodwork after each kick
   onboarded: false, // first-match coach marks seen
   difficulty: 'normal',
   homeTeam: 'lions',

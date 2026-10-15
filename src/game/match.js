@@ -10,12 +10,17 @@ import { createHud } from '../ui/hud.js';
 import { KEEPER_LIMBS } from '../actors/keeper.js';
 import { setKit } from '../world/scene.js';
 import { KEEPER_KIT, TEAMS } from './teams.js';
+import { createEffects } from '../fx/effects.js';
+import { Recorder } from './replay.js';
 
 const SPOT = new THREE.Vector3(0, BALL.radius, 11);
 const POWER_PERIOD = 1.1; // seconds for the power bar to go 0 → 100%
 const CURVE_PERIOD = 1.0; // seconds for a full curve swing
 const AIM = { minX: -4.6, maxX: 4.6, minY: 0.15, maxY: 3.2, keySpeed: 3.2 };
 const RESULT_HOLD = 2.6; // seconds the result is shown before the next kick
+const RESULT_HOLD_BEFORE_REPLAY = 1.7; // shorter when a replay follows
+const REPLAY_RATE = 0.6; // playback speed of the replay
+const REPLAY_LEAD = 0.7; // seconds of run-up shown before the strike
 
 const RESULT_TEXT = { goal: 'Goal!', saved: 'Saved!', post: 'Off the woodwork!', miss: 'Missed!' };
 
@@ -47,12 +52,20 @@ export async function createMatch({ world, canvas, params, options = {}, setting
   director.reducedMotion = get('reducedMotion', director.reducedMotion);
   const hud = createHud(teams);
   const input = createInput(canvas, camera);
+  const fx = createEffects(world.scene, { low: get('quality', 'high') === 'low' });
+  const recorder = new Recorder([keeper.root, striker.root, ball]);
+  let recording = false;
+  let recT = 0;
+  let replay = null; // { t, end, rate, goalAt, goalFired } while a replay plays
+  let replays = 0; // alternates the camera angle
+  let slow = null; // { left, total, from } — brief slow-motion after a goal or save
   const rand = Math.random;
   setKit(keeper.root, KEEPER_KIT);
 
   const unsubscribe = settings?.subscribe((k, v) => {
     if (k === 'reducedMotion') director.reducedMotion = v;
     if (k === 'hints') refreshPrompt();
+    if (k === 'quality') fx.low = v === 'low';
   });
 
   let shootout = createShootout();
@@ -98,6 +111,10 @@ export async function createMatch({ world, canvas, params, options = {}, setting
     pendingSave = null;
     playerMove = null;
     accumulator = 0;
+    recorder.clear();
+    recording = false;
+    slow = null;
+    fx.clear();
 
     const who = mode === '1p'
       ? (team === 'home' ? 'Your kick' : "You're in goal")
@@ -117,7 +134,10 @@ export async function createMatch({ world, canvas, params, options = {}, setting
     onEvent('kick', { team, shooterHuman, keeperHuman, round: currentRound(shootout) });
   }
 
+  function startRecording() { recorder.clear(); recT = 0; recording = true; recorder.record(0); }
+
   function beginRunUp() {
+    startRecording();
     setPhase('runup');
     hud.meters(false);
     hud.reticle(null);
@@ -133,6 +153,7 @@ export async function createMatch({ world, canvas, params, options = {}, setting
     physics.kick(velocity, spin);
     kick.shot = shot;
     kick.launch = { position: SPOT.clone(), velocity, spin };
+    recorder.mark('strike');
     onEvent('strike', { power: shot.power, x: shot.target.x });
     setPhase('flight');
     director.cut(SHOTS.follow(() => ball.position));
@@ -160,14 +181,81 @@ export async function createMatch({ world, canvas, params, options = {}, setting
     director.cut(SHOTS.reaction(scored ? 'goal' : 'save', ball.position.clone()));
     striker.react(scored ? 'celebrate' : 'dejected');
     if (!scored && kick.touchedKeeper) keeper.react('celebrate');
+    recorder.mark('result');
+    if (scored) { fx.goal(teams[kick.team].color, ball.position.x); director.addShake(0.1); hud.flash('goal'); }
+    else if (kick.touchedKeeper) hud.flash('save');
+    if (!get('reducedMotion', false) && (scored || kick.touchedKeeper)) slow = { left: scored ? 1.1 : 0.7, total: scored ? 1.1 : 0.7, from: scored ? 0.3 : 0.45 };
     setPhase('result');
     onEvent('result', { team: kick.team, outcome, score: { home: score(shootout, 'home'), away: score(shootout, 'away') } });
+  }
+
+  /** After a kick (and its replay): the next kick, or the end of the shootout. */
+  function advance() {
+    if (shootout.winner) {
+      setPhase('over');
+      hud.result(null);
+      onEvent('over', {
+        winner: shootout.winner, mode, home: teams.home, away: teams.away,
+        score: { home: score(shootout, 'home'), away: score(shootout, 'away') },
+      });
+    } else {
+      startKick();
+    }
+  }
+
+  // --- Replay ---------------------------------------------------------------------------------
+  const shouldReplay = () => get('autoReplay', true) && ['goal', 'saved', 'post'].includes(kick.outcome)
+    && recorder.count > 12 && recorder.marks.strike != null;
+
+  function startReplay() {
+    replay = {
+      t: Math.max(0, recorder.marks.strike - REPLAY_LEAD),
+      end: recorder.duration - 0.25,
+      goalAt: kick.outcome === 'goal' ? recorder.marks.result : null,
+      goalFired: false,
+      prev: ball.position.clone(),
+    };
+    replays++;
+    fx.clear();
+    hud.result(null);
+    hud.meters(false);
+    hud.reticle(null);
+    hud.coach(null);
+    hud.replay(true);
+    setPhase('replay');
+    recorder.apply(replay.t); // pose the scene first: the camera's first frame tracks the replayed ball, not the live one
+    const side = (kick.shot?.target.x ?? 0) >= 0 ? 1 : -1;
+    director.cut(SHOTS.replay(replays % 2 ? 'behind' : 'side', side, () => ball.position), { cut: true });
+  }
+
+  function updateReplay(rawDt) {
+    const dt = rawDt * REPLAY_RATE;
+    replay.t += dt;
+    recorder.apply(replay.t);
+    if (replay.goalAt != null && !replay.goalFired && replay.t >= replay.goalAt) {
+      replay.goalFired = true;
+      fx.goal(teams[kick.team].color, ball.position.x);
+    }
+    const speed = ball.position.distanceTo(replay.prev) / Math.max(dt, 1e-4);
+    replay.prev.copy(ball.position);
+    fx.trail(ball.position, speed, true);
+    fx.update(dt);
+    if (replay.t >= replay.end) endReplay();
+  }
+
+  function endReplay() {
+    if (phase !== 'replay') return;
+    replay = null;
+    hud.replay(false);
+    fx.clear();
+    advance();
   }
 
   // --- Prompts / onboarding -------------------------------------------------------------------
   function refreshPrompt() {
     if (!get('hints', true)) return hud.prompt('');
     const keeperKeys2p = 'Keeper: A D low · Q E high · S block · W jump';
+    if (phase === 'replay') return hud.prompt('Press Space or click to skip the replay'); // always shown: it is the only control
     const text = {
       aim: mode === '2p' ? `Aim with the mouse or arrows · hold SPACE for power — ${keeperKeys2p}` : 'Aim with the mouse or arrows · hold SPACE (or press and hold) for power',
       power: 'Release to set power — the striped end skies it',
@@ -186,9 +274,11 @@ export async function createMatch({ world, canvas, params, options = {}, setting
     if (e.type === 'post' || e.type === 'bar') {
       kick.woodwork = true;
       director.addShake(0.06);
+      fx.hit(ball.position, e.speed);
       onEvent('woodwork', { type: e.type, speed: e.speed, x: ball.position.x });
     } else if (e.type === 'keeper' && !kick.touchedKeeper) {
       kick.touchedKeeper = true;
+      fx.hit(ball.position, e.speed, 0xc6f432);
       // Clean contact on a slower ball = catch and hold; otherwise the physics parries it.
       const catchBelow = kick.keeperHuman ? DIFFICULTY.normal.catchBelow : ai.catchBelow;
       if (e.speed < catchBelow) kick.held = true;
@@ -199,8 +289,16 @@ export async function createMatch({ world, canvas, params, options = {}, setting
   }
 
   // --- Per-frame ----------------------------------------------------------------------------
-  function update(dt) {
+  function update(rawDt) {
     if (paused) return;
+    if (phase === 'replay') { updateReplay(rawDt); director.update(rawDt); return; }
+    // Brief slow-motion after a goal or save: time eases from `from` back to 1 (quadratic ease-out).
+    let dt = rawDt;
+    if (slow) {
+      slow.left -= rawDt;
+      if (slow.left <= 0) slow = null;
+      else { const u = 1 - slow.left / slow.total; dt = rawDt * (slow.from + (1 - slow.from) * u * u); }
+    }
     phaseT += dt;
     handlePhaseInput(dt);
 
@@ -225,19 +323,18 @@ export async function createMatch({ world, canvas, params, options = {}, setting
         steps++;
       }
       syncBall();
+      const v = physics.ball.linvel();
+      fx.trail(ball.position, Math.hypot(v.x, v.y, v.z), phase === 'flight');
       if (phase === 'flight') judge();
     }
+    fx.update(dt);
+    if (recording) { recT += dt; recorder.record(recT); }
 
-    if (phase === 'result' && phaseT > RESULT_HOLD) {
-      if (shootout.winner) {
-        setPhase('over');
-        hud.result(null);
-        onEvent('over', {
-          winner: shootout.winner, mode, home: teams.home, away: teams.away,
-          score: { home: score(shootout, 'home'), away: score(shootout, 'away') },
-        });
-      } else {
-        startKick();
+    if (phase === 'result') {
+      const willReplay = shouldReplay();
+      if (phaseT > (willReplay ? RESULT_HOLD_BEFORE_REPLAY : RESULT_HOLD)) {
+        recording = false;
+        if (willReplay) startReplay(); else advance();
       }
     }
 
@@ -281,6 +378,7 @@ export async function createMatch({ world, canvas, params, options = {}, setting
       meter.curve = Math.sin((phaseT / CURVE_PERIOD) * Math.PI * 2);
       hud.meters(true, { power: meter.power, curve: meter.curve, curveActive: true });
     } else if (phase === 'keeper' && phaseT > 1.4 && !striker.run) {
+      startRecording();
       striker.runUp(SPOT, strike, 1.0);
       setPhase('runup');
       onEvent('whistle', {});
@@ -293,6 +391,7 @@ export async function createMatch({ world, canvas, params, options = {}, setting
     if (paused) return;
     if (phase === 'aim') setPhase('power');
     else if (phase === 'curve') beginRunUp();
+    else if (phase === 'replay') endReplay();
     else if (!kick?.shooterHuman && keeperWindow() && source === 'pointer') {
       // 1P in goal: click where to dive.
       const p = input.pointerOnGoalPlane(tmp);
@@ -380,6 +479,8 @@ export async function createMatch({ world, canvas, params, options = {}, setting
       if (p && phase === 'power') setPhase('aim'); // a held charge is cancelled, not fired, on pause
     },
     restart() {
+      replay = null;
+      hud.replay(false);
       shootout = createShootout();
       startKick();
     },
@@ -398,6 +499,7 @@ export async function createMatch({ world, canvas, params, options = {}, setting
     debugForceSave(move, delay = 0.02) { forcedSave = { delay, move }; },
     dispose() {
       unsubscribe?.();
+      fx.dispose();
       input.dispose();
       hud.dispose();
       physics.dispose();

@@ -99,6 +99,31 @@
 .hud__result[data-kind='saved'] { color: var(--accent); }
 .hud__result[data-kind='miss'], .hud__result[data-kind='post'] { color: var(--text); }
 
+/* ---------- Goal / save flash, replay chrome ---------- */
+.hud__flash { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
+.hud__flash[data-kind='goal'] { background: radial-gradient(ellipse at 50% 40%, rgb(255 200 61 / 0.55), transparent 70%); }
+.hud__flash[data-kind='save'] { background: radial-gradient(ellipse at 50% 50%, rgb(198 244 50 / 0.35), transparent 70%); }
+.hud__flash.is-on { animation: flash 800ms var(--ease) both; }
+@keyframes flash { 0% { opacity: 1; } 100% { opacity: 0; } }
+
+.hud__bars::before, .hud__bars::after {
+  content: ''; position: absolute; left: 0; right: 0; height: 7vh; background: #000;
+  transition: transform 420ms var(--ease); z-index: 0;
+}
+.hud__bars::before { top: 0; transform: translateY(-100%); }
+.hud__bars::after { bottom: 0; transform: translateY(100%); }
+.hud.is-replay .hud__bars::before, .hud.is-replay .hud__bars::after { transform: none; }
+.scoreboard, .hud__pause, .hud__prompt { z-index: 1; }
+.hud.is-replay .hud__pause { opacity: 0.5; }
+.hud__replay {
+  position: absolute; left: var(--sp-5); top: calc(7vh + var(--sp-4)); z-index: 1; display: flex; align-items: center; gap: var(--sp-2);
+  padding: var(--sp-1) var(--sp-3); border-radius: 999px; background: color-mix(in srgb, var(--bg) 82%, transparent);
+  font-family: var(--font-display); font-size: var(--fs-0); letter-spacing: 0.12em; text-transform: uppercase;
+}
+.hud__rec { width: 10px; height: 10px; border-radius: 50%; background: var(--danger); animation: rec 1s steps(2) infinite; }
+@keyframes rec { 50% { opacity: 0.2; } }
+.hud.is-replay .hud__prompt { bottom: calc(7vh + var(--sp-3)); }
+
 @media (max-width: 720px) {
   .scoreboard { min-width: 0; width: calc(100vw - 96px); left: var(--sp-3); transform: none; column-gap: var(--sp-2); }
   .scoreboard__dots { gap: 3px; }
