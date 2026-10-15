@@ -98,6 +98,8 @@ what was tested, decisions needed).
   src/world/pitch.js; kits = src/world/kit.js (shader regions by bone + bind-pose height; kits in teams.js).
   Camera springs are exact (director.js) — never go back to Euler steps (they exploded at low fps).
   UI = tokens.css design system, ui.js screens, hud.js broadcast HUD. Visual QA: scripts/visual-qa.mjs
-  <outDir> [w h quality] (PORT env for a second dev server); docs/qa/ is git-ignored.
+  <outDir> [w h quality] (PORT env for a second dev server); docs/qa/ is git-ignored; before/after sheet in
+  docs/visual-overhaul.jpg. Layout: scripts/layout-check.mjs (7 viewports). Relative frame cost:
+  scripts/perf-measure.mjs (backdrop anisotropy is the biggest cost knob; it follows the quality preset).
 - Phase 0 plan lives in `docs/PLAN.md`.
 - Git branch for development: `claude/3d-football-penalty-shootout-q6sult`.
