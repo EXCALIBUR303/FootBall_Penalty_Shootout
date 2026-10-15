@@ -21,7 +21,7 @@ for (const [w, h] of VIEWPORTS) {
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => { if (m.type() === 'error' && !/GPU stall/.test(m.text())) errors.push(m.text()); });
   await page.addInitScript(() => localStorage.setItem('penalty-kings.settings', JSON.stringify({ quality: 'low', onboarded: true, autoReplay: false })));
-  await page.goto(`http://localhost:${port}/`);
+  await page.goto(`http://localhost:${port}/?timescale=4`); // dev-only fast-forward: layout is what is checked
   await page.waitForSelector('[data-screen="menu"]:not([hidden])', { timeout: 60000 });
   await page.waitForTimeout(600);
 
