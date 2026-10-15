@@ -6,24 +6,36 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { preset } from './quality.js';
 
 /**
- * Post-processing chain: scene (HDR, 4x MSAA) → light bloom → OutputPass (ACES tone mapping + sRGB).
+ * Post-processing chain: scene (HDR, MSAA) → light bloom → OutputPass (tone mapping + sRGB).
  * On the low-quality preset the chain is skipped entirely and the renderer draws straight to the canvas
- * (tone mapping then happens in the material shaders), which saves two full-screen passes and the HDR targets.
+ * (tone mapping then happens in the material shaders), which saves the HDR targets and three passes.
+ * Both paths use the renderer's tone mapping and output colour space, so they look the same apart from
+ * the bloom (verified with screenshots).
+ *
+ * Safari / older GPUs: rendering to a half-float target needs EXT_color_buffer_float (or the half-float
+ * variant). Without it the chain is not built and High falls back to direct rendering with a console note.
  */
 export function createPost(renderer, scene, camera) {
   let composer = null;
   let bloom = null;
+  let target = null;
   let enabled = false;
   const size = new THREE.Vector2();
+  const canHdr = renderer.extensions.has('EXT_color_buffer_float') || renderer.extensions.has('EXT_color_buffer_half_float');
+  if (!canHdr) console.info('Post-processing disabled: no float render-target support (High renders without bloom).');
+
+  // MSAA on top of a ≥1.75× pixel ratio (Retina) mostly re-samples pixels that are already supersampled;
+  // 2 samples there costs half as much as 4 and looks the same.
+  const samplesFor = () => (renderer.getPixelRatio() >= 1.75 ? 2 : 4);
 
   function build() {
     renderer.getDrawingBufferSize(size);
-    const target = new THREE.WebGLRenderTarget(size.x, size.y, { type: THREE.HalfFloatType, samples: 4 });
+    target = new THREE.WebGLRenderTarget(size.x, size.y, { type: THREE.HalfFloatType, samples: samplesFor() });
     composer = new EffectComposer(renderer, target);
     composer.addPass(new RenderPass(scene, camera));
-    // The HDRI's sky is ~2–7 in linear HDR and its lamps/sun reach ~12–40, so a threshold of 14 keeps the
-    // glow to floodlights and glare instead of washing out the whole sky.
-    bloom = new UnrealBloomPass(new THREE.Vector2(size.x, size.y), 0.18, 0.4, 14);
+    // The stadium backdrop is a display-referred photo (≤ 1.0), so only true HDR highlights cross this
+    // threshold: sunlit kit whites, the posts, spark and confetti glints. Light touch by design.
+    bloom = new UnrealBloomPass(new THREE.Vector2(size.x, size.y), 0.14, 0.35, 1.15);
     composer.addPass(bloom);
     composer.addPass(new OutputPass());
   }
@@ -32,7 +44,7 @@ export function createPost(renderer, scene, camera) {
     get enabled() { return enabled; },
     /** Apply the active quality preset (call after changing it). */
     apply() {
-      const want = preset().bloom;
+      const want = preset().bloom && canHdr;
       if (want && !composer) build();
       enabled = want;
       api.resize();
@@ -41,6 +53,11 @@ export function createPost(renderer, scene, camera) {
       if (!composer) return;
       composer.setPixelRatio(renderer.getPixelRatio());
       composer.setSize(window.innerWidth, window.innerHeight);
+      // The MSAA sample count follows the pixel ratio (moving a window between displays changes it).
+      const samples = samplesFor();
+      for (const rt of [composer.renderTarget1, composer.renderTarget2]) {
+        if (rt.samples !== samples) { rt.samples = samples; rt.dispose(); }
+      }
     },
     render(dt) {
       if (enabled) composer.render(dt);
