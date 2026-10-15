@@ -12,7 +12,7 @@
 export const GAME_ASSETS = [
   { id: 'hdri', type: 'hdr', url: 'assets/hdri/stadium_01_2k.hdr', label: 'sky' },
   { id: 'stadium', type: 'glb', url: 'assets/models/stadium.glb', label: 'stadium', optional: true }, // HDRI covers it
-  { id: 'goal', type: 'glb', url: 'assets/models/goal.glb', label: 'goal', optional: true }, // physics goal exists regardless
+  { id: 'goal', type: 'glb', url: 'assets/models/goal.glb', label: 'goal', optional: true }, // CC0 soccerGoal; the physics goal exists regardless
   { id: 'ball', type: 'glb', url: 'assets/models/ball.glb', label: 'ball' },
   // One Quaternius rig serves both players; the scene clones it per role and tints the kit.
   { id: 'character', type: 'glb', url: 'assets/models/character.glb', label: 'players' },

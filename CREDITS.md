@@ -8,7 +8,7 @@ Entries marked **not included** were chosen in `docs/PLAN.md` but could not be d
 | Asset | Name | Author | License | URL | Status |
 |---|---|---|---|---|---|
 | Ball | Football (inflated variant only; 2K textures, Draco/WebP) | Amal Kumar (Poly Haven) | CC0 | https://polyhaven.com/a/football | **in repo** |
-| Goal + net | Soccer goal | Poly by Google | CC-BY 3.0 | https://poly.pizza/search/Soccer | **not included** |
+| Goal + net | soccerGoal (normal version; stray poles removed, converted from .blend to GLB, Draco) | almaPerdida (OpenGameArt) | CC0 | https://opengameart.org/content/soccergoal | **in repo** |
 | Goalkeeper, striker | Mannequin + 43 clips, Universal Animation Library [Standard] (UAL1_Standard.glb) | Quaternius | CC0 | https://quaternius.itch.io/universal-animation-library | **in repo** |
 | Stadium | Stadium | Zsky (Poly Pizza) | CC-BY 3.0 | https://poly.pizza/search/stadium | **not included** (the HDRI provides the stadium) |
 | Sky HDRI | Stadium 01 (2K) | Sergej Majboroda (Poly Haven) | CC0 | https://polyhaven.com/a/stadium_01 | **in repo** |

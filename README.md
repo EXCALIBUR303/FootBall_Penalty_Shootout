@@ -2,8 +2,6 @@
 
 A 3D football penalty shootout for desktop Chromium, built with Vite and Three.js. Take five penalties each against an AI goalkeeper (then sudden death), or play a friend on the same keyboard.
 
-> **Known gap:** the goal model is not in the repository yet (see [Swapping models](#swapping-models)). The physics goal (posts, bar, net) is fully working and goals are detected correctly, but until a goal GLB is dropped in, the frame is only visible with `?debug` colliders. Everything else (ball, players, stadium sky and pitch, audio, replay) is in.
-
 ## Run it
 
 ```bash
@@ -36,7 +34,7 @@ Needs a current Chromium-based browser with WebGL 2.
 
 ## Features
 
-- Imported GLB models only for the ball and players; sky and pitch come from a CC0 HDRI projected onto a grounded dome.
+- Imported GLB models only for the ball, goal and players; sky and pitch come from a CC0 HDRI projected onto a grounded dome.
 - Rapier physics with CCD ball, post/bar/net colliders, plus hand-written drag and Magnus (spin) forces. A shot solver aims the ball so the *predicted* line crossing hits your target; power overshoot and wobble are applied afterwards.
 - Keeper dive, block and jump animations authored as keyframes (the library rig has none) and a keeper AI with per-difficulty reaction time, read error, guessing and reach.
 - Cinematic cameras (aim, run-up, follow, reaction, keeper view, two replay angles) driven by damped springs; hard cuts under reduced motion.
@@ -82,7 +80,7 @@ docs/PLAN.md         the Phase 0 research and plan
 All loaded files are listed in `src/assets/manifest.js`; nothing else refers to file names.
 
 1. Put the source GLB in `assets/raw/` (git-ignored) and run `npm run assets`. It optimises with Draco and WebP into `public/assets/models/`.
-2. To **add the goal** (currently missing): save it as `assets/raw/goal.glb`, run `npm run assets`, and it loads automatically (entry `goal` already exists). The goal line is at z = 0 and the goal faces +z; models are scaled to the standard 7.32 m width, so only rotation may need adjusting in `src/world/scene.js`. Same for an optional `stadium.glb`.
+2. To **replace the goal**: save the new model as `assets/raw/goal/goal.glb`, run `npm run assets`. It is scaled to the 7.56 m outer width and slid back so the front of the posts sits on the goal line (z = 0). It must open towards +z (net towards -z); rotate it in `src/world/scene.js` otherwise. The physics goal (`GOAL` in `src/game/shot.js`: posts, bar, net depth 1.5 m) should match the model. The shipped goal came from a Blender file via `scripts/convert-goal-blend.py`. An optional `stadium.glb` works the same way.
 3. To **replace the ball or character**, overwrite `ball.glb` / `character.glb`. The character must be a skinned humanoid with the Quaternius UAL bone names; the dive, block, jump and kick clips are authored per bone in `src/actors/clips.js` and mapped by `src/actors/pose.js`.
 4. Target real-world sizes live in `TARGET_SIZE` in the manifest.
 

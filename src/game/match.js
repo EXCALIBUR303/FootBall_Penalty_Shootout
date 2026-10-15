@@ -178,7 +178,8 @@ export async function createMatch({ world, canvas, params, options = {}, setting
     recordKick(shootout, scored);
     hud.result(outcome, RESULT_TEXT[outcome]);
     hud.setScore(shootout, { round: currentRound(shootout), suddenDeath: isSuddenDeath(shootout) });
-    director.cut(SHOTS.reaction(scored ? 'goal' : 'save', ball.position.clone()));
+    // A goal cuts straight to the behind-the-net angle: gliding there would drag the camera through the net.
+    director.cut(SHOTS.reaction(scored ? 'goal' : 'save', ball.position.clone()), { cut: scored });
     striker.react(scored ? 'celebrate' : 'dejected');
     if (!scored && kick.touchedKeeper) keeper.react('celebrate');
     recorder.mark('result');

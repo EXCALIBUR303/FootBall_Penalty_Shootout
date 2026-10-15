@@ -4,6 +4,7 @@ import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { TARGET_SIZE, PITCH } from '../assets/manifest.js';
 import { fitModel, enableShadows } from './normalize.js';
 import { preset } from '../core/quality.js';
+import { GOAL } from '../game/shot.js';
 import { buildClip } from '../actors/pose.js';
 import { AUTHORED, DIVE_LOW, DIVE_HIGH } from '../actors/clips.js';
 import { Keeper } from '../actors/keeper.js';
@@ -69,8 +70,12 @@ export function buildScene(renderer, assets) {
   }
   if (assets.goal) {
     goal = fitModel(assets.goal.scene, 'width', TARGET_SIZE.goalOuterWidth);
+    // fitModel centres the model on z; slide it back so the front of the posts sits on the goal line (z = 0).
+    // The net then extends towards -z. (The model must face +z: rotate it here if a different goal faces the other way.)
+    goal.updateMatrixWorld(true);
+    goal.position.z -= new THREE.Box3().setFromObject(goal).max.z - GOAL.postRadius;
     enableShadows(goal);
-    scene.add(goal); // goal line z = 0; adjust rotation here if a model faces the other way
+    scene.add(goal);
   }
 
   // Ball: centred on its own origin so it can copy the physics body's position and rotation directly.

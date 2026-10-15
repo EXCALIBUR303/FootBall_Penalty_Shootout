@@ -76,8 +76,8 @@ what was tested, decisions needed).
   textured pitch plane only if the stadium has none.
 
 - Phase 1 status: HDRI (also used as pitch + stands via GroundedSkybox), ball, and one shared Quaternius
-  character (cloned + tinted for keeper/striker) are in. GOAL and STADIUM GLBs are still missing: Poly Pizza is
-  behind Cloudflare, Sketchfab downloads need login. Drop them in assets/raw/, run `npm run assets`, and add
+  character (cloned + tinted for keeper/striker) are in. GOAL is in (CC0 soccerGoal from OpenGameArt, converted with scripts/convert-goal-blend.py); STADIUM GLB is still missing
+  (HDRI covers it): Poly Pizza is behind Cloudflare, Sketchfab downloads need login. Drop them in assets/raw/, run `npm run assets`, and add
   the files to src/assets/manifest.js (ids `goal`, `stadium` already listed).
 - Quaternius UAL has NO dive/parry/kick clips: authored in src/actors/clips.js (character-space angles,
   converted per bone by src/actors/pose.js). Preview with `/?pose=low&side=1&t=0.42` (dev only).

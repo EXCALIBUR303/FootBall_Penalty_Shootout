@@ -1,7 +1,7 @@
 import { predictCrossing, BALL } from '../physics/aero.js';
 
 // Goal mouth (inside of posts / underside of bar) in pitch space. Goal line is z = 0.
-export const GOAL = { halfWidth: 3.66, height: 2.44, postRadius: 0.06, depth: 2.0 };
+export const GOAL = { halfWidth: 3.66, height: 2.44, postRadius: 0.06, depth: 1.5 };
 
 export const SHOT = {
   minSpeed: 15, // m/s at 0% power: a gentle side-foot
