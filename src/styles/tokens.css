@@ -30,6 +30,7 @@
   --dur-screen: 280ms;
 
   --font-ui: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Kenney Future', system-ui, sans-serif;
 }
 
 @media (prefers-reduced-motion: reduce) {
