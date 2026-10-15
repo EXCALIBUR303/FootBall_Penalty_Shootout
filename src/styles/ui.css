@@ -1,0 +1,132 @@
+/* Menus, dialogs and form controls. Tokens live in tokens.css (palette + scale from docs/PLAN.md §7). */
+@font-face {
+  font-family: 'Kenney Future';
+  src: url('../assets/fonts/KenneyFuture.ttf') format('truetype'); /* bundled + hashed by Vite */
+  font-display: swap;
+}
+
+/* ---------- Layout surfaces ---------- */
+.screen, .dialog {
+  position: absolute; inset: 0; display: grid; place-items: center; padding: var(--sp-5);
+  overflow-y: auto;
+}
+.screen { background: linear-gradient(180deg, rgb(11 18 32 / 0.15), rgb(11 18 32 / 0.75) 70%); }
+.screen.is-active > * { animation: rise var(--dur-screen) var(--ease) both; }
+.dialog { background: rgb(11 18 32 / 0.62); backdrop-filter: blur(6px); opacity: 0; transition: opacity var(--dur-screen) var(--ease); z-index: 10; }
+.dialog.is-open { opacity: 1; }
+.dialog .dialog__card { transform: translateY(12px) scale(0.98); transition: transform var(--dur-screen) var(--ease); }
+.dialog.is-open .dialog__card { transform: none; }
+@keyframes rise { from { opacity: 0; transform: translateY(12px); } }
+
+.panel {
+  background: color-mix(in srgb, var(--panel) 94%, transparent); border: 1px solid var(--line);
+  border-radius: var(--radius-2); padding: var(--sp-6); box-shadow: 0 24px 64px rgb(0 0 0 / 0.45);
+  display: grid; gap: var(--sp-5); width: min(440px, 100%);
+}
+.dialog__card--wide { width: min(760px, 100%); }
+.panel__head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); }
+.panel__title { margin: 0; font-family: var(--font-display); font-size: var(--fs-3); letter-spacing: 0.04em; text-transform: uppercase; }
+.stack { display: grid; gap: var(--sp-3); }
+.stack--row { grid-auto-flow: column; justify-content: center; }
+.muted { color: var(--text-muted); margin: 0; }
+.eyebrow { margin: 0; color: var(--accent); font-size: var(--fs--1); font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; }
+
+/* ---------- Main menu ---------- */
+.screen--menu { place-items: center start; padding-left: clamp(var(--sp-5), 8vw, 140px); }
+.menu { display: grid; gap: var(--sp-5); max-width: 520px; }
+.brand {
+  margin: 0; font-family: var(--font-display); font-size: clamp(2.6rem, 1.4rem + 5vw, 4.8rem);
+  line-height: 0.95; letter-spacing: 0.02em; text-transform: uppercase; text-shadow: 0 6px 32px rgb(0 0 0 / 0.55);
+}
+.menu__nav { display: grid; gap: var(--sp-3); width: min(340px, 100%); }
+.menu__foot { margin: 0; color: var(--text-muted); font-size: var(--fs--1); text-shadow: 0 1px 6px rgb(0 0 0 / 0.8); }
+
+/* ---------- Buttons ---------- */
+.btn {
+  --bg: color-mix(in srgb, var(--panel) 92%, transparent);
+  appearance: none; border: 1px solid var(--line); background: var(--bg); color: var(--text);
+  font: 700 var(--fs-0) / 1 var(--font-ui); letter-spacing: 0.02em; padding: 0 var(--sp-5); min-height: 48px;
+  border-radius: var(--radius-1); cursor: pointer; text-align: left;
+  transition: transform var(--dur-micro) var(--ease), background-color var(--dur-micro) var(--ease), border-color var(--dur-micro) var(--ease), box-shadow var(--dur-micro) var(--ease);
+}
+.btn:hover { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); transform: translateY(-1px); }
+.btn:active { transform: scale(0.97); }
+.btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.btn--primary { --bg: var(--accent); color: #0b1220; border-color: transparent; box-shadow: 0 8px 24px rgb(198 244 50 / 0.25); }
+.btn--primary:hover { --bg: #d4ff4a; border-color: transparent; }
+.btn--primary:focus-visible { outline-color: var(--text); }
+.btn--ghost { --bg: transparent; border-color: transparent; }
+.btn--ghost:hover { --bg: color-mix(in srgb, var(--text) 8%, transparent); }
+.btn--xl { min-height: 56px; font-size: var(--fs-1); text-transform: uppercase; letter-spacing: 0.06em; }
+.btn--sm { min-height: 44px; padding: 0 var(--sp-3); font-size: var(--fs--1); } /* 44px: touch target */
+.btn--icon { width: 48px; padding: 0; text-align: center; }
+
+kbd {
+  display: inline-block; min-width: 1.7em; padding: 2px 6px; margin: 0 1px; border-radius: 6px; text-align: center;
+  background: var(--bg); border: 1px solid var(--line); border-bottom-width: 3px; font: 700 0.85em var(--font-ui); color: var(--text);
+}
+
+/* ---------- Form fields ---------- */
+fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.field { display: grid; gap: var(--sp-2); }
+.field__label { font-size: var(--fs--1); color: var(--text-muted); font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 0; }
+.picker { display: grid; grid-template-columns: auto 1fr auto; gap: var(--sp-2); align-items: center; }
+.picker__value {
+  --team: var(--text); display: flex; align-items: center; gap: var(--sp-3); min-height: 48px; padding: 0 var(--sp-4);
+  border-radius: var(--radius-1); background: var(--bg); border: 1px solid var(--line); font-weight: 800; font-size: var(--fs-1);
+}
+.picker__value::before { content: ''; width: 14px; height: 14px; border-radius: 4px; background: var(--team); box-shadow: 0 0 0 3px color-mix(in srgb, var(--team) 25%, transparent); }
+
+.segmented { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; padding: 4px; background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius-1); }
+.segmented label { position: relative; }
+.segmented input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.segmented span {
+  display: grid; place-items: center; min-height: 44px; border-radius: 7px; font-weight: 700; color: var(--text-muted);
+  transition: background-color var(--dur-micro) var(--ease), color var(--dur-micro) var(--ease);
+}
+.segmented input:hover + span { color: var(--text); }
+.segmented input:checked + span { background: var(--accent); color: #0b1220; }
+.segmented input:focus-visible + span { outline: 3px solid var(--accent); outline-offset: 2px; }
+.segmented input:checked:focus-visible + span { outline-color: var(--text); }
+
+.field--range { grid-template-columns: 1fr auto; align-items: center; }
+.field--range .field__label { grid-column: 1 / -1; }
+.field--range output { font-variant-numeric: tabular-nums; color: var(--text-muted); min-width: 4ch; text-align: right; }
+input[type='range'] { width: 100%; accent-color: var(--accent); min-height: 32px; }
+.check { display: flex; gap: var(--sp-3); align-items: center; min-height: 44px; cursor: pointer; }
+.check input { width: 22px; height: 22px; accent-color: var(--accent); margin: 0; flex: none; }
+.check small { color: var(--text-muted); }
+.check input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+.setup__go { justify-self: stretch; text-align: center; }
+
+/* ---------- Help ---------- */
+.help { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: var(--sp-5); }
+.help h3 { margin: 0 0 var(--sp-2); font-size: var(--fs-1); }
+.help ol { margin: 0; padding-left: 1.2em; display: grid; gap: var(--sp-2); }
+.help p { margin: 0 0 var(--sp-2); line-height: 1.5; }
+.keys { border-collapse: collapse; margin-bottom: var(--sp-2); }
+.keys td { padding: 4px var(--sp-3) 4px 0; }
+
+/* ---------- End screen ---------- */
+.end { text-align: center; justify-items: center; }
+.end__title {
+  --team: var(--accent); margin: 0; font-family: var(--font-display); font-size: var(--fs-4);
+  text-transform: uppercase; color: var(--team); letter-spacing: 0.03em;
+}
+.end__score { margin: 0; font-size: var(--fs-5); font-weight: 900; font-variant-numeric: tabular-nums; }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 720px) {
+  .screen--menu { place-items: end stretch; padding: var(--sp-5); }
+  .menu__nav { width: 100%; }
+  .stack--row { grid-auto-flow: row; justify-content: stretch; }
+  .panel { padding: var(--sp-5); }
+}
+
+/* ---------- Reduced motion (setting or OS) ---------- */
+.reduce-motion *, .reduce-motion *::before, .reduce-motion *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; }
+
+/* Row of actions: keep labels on one line and centred. */
+.stack--row .btn, .stack > .btn, .panel > .btn { text-align: center; white-space: nowrap; }
+.keys td:last-child { white-space: nowrap; }
