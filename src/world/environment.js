@@ -51,7 +51,8 @@ export function buildEnvironment(renderer, scene, assets) {
 
   let sky = null;
   if (map) {
-    sky = new GroundedSkybox(map, STADIUM.height, STADIUM.radius, 160);
+    // The lookup is per pixel (below), so vertex density only shapes the dome: 64 rings ≈ 16k triangles.
+    sky = new GroundedSkybox(map, STADIUM.height, STADIUM.radius, 64);
     sky.name = 'stadium';
     sky.position.set(0, STADIUM.height, STADIUM.centreZ); // floor at y = 0
     sky.rotation.y = STADIUM.yaw;

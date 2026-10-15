@@ -32,7 +32,10 @@ for (const [w, h] of VIEWPORTS) {
         const el = [...document.querySelectorAll(s)].find((n) => n.offsetParent !== null || getComputedStyle(n).position === 'fixed');
         if (!el) { res.boxes[s] = null; continue; }
         const b = el.getBoundingClientRect();
-        res.boxes[s] = { l: b.left, t: b.top, r: b.right, b: b.bottom, inside: b.left >= -1 && b.top >= -1 && b.right <= vw + 1 && b.bottom <= vh + 1 };
+        // Taller than the viewport is fine inside a scrollable screen or dialog (phones); sideways never is.
+        const scroller = el.closest('.screen, .dialog');
+        const scrolls = scroller && getComputedStyle(scroller).overflowY === 'auto' && scroller.scrollHeight > scroller.clientHeight;
+        res.boxes[s] = { l: b.left, t: b.top, r: b.right, b: b.bottom, scrolls, inside: b.left >= -1 && b.right <= vw + 1 && (scrolls || (b.top >= -1 && b.bottom <= vh + 1)) };
       }
       return res;
     }, selectors);

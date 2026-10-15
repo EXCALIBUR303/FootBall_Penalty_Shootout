@@ -283,6 +283,14 @@ input[type='range']:focus-visible { outline: 3px solid var(--c-pitch); outline-o
   .help { grid-template-columns: 1fr; gap: var(--sp-5); }
 }
 @media (max-width: 560px) {
+  .setup { gap: var(--sp-4); padding: var(--sp-4); }
+  .setup__title { font-size: var(--fs-xl); }
+  .diff__desc { display: none; }
+  .diff__card { padding: var(--sp-2) var(--sp-3); }
+  .team-card { padding: var(--sp-3); }
+  .team-card__badge .shirt { width: 44px; height: 44px; }
+  .team-card__name { font-size: var(--fs-lg); }
+  .setup__note { display: none; }
   .screen--menu { padding-left: var(--safe); background: linear-gradient(0deg, rgb(6 10 18 / 0.92) 30%, rgb(6 10 18 / 0.3)); align-content: end; }
   .screen__keys { display: none; }
   .setup__go { width: 100%; }

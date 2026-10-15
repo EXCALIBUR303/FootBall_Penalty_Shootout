@@ -8,10 +8,10 @@
   position: absolute; top: var(--safe); left: 50%; transform: translateX(-50%); z-index: 2;
   display: grid; filter: drop-shadow(0 8px 20px rgb(0 0 0 / 0.45));
 }
-.sb__main { display: grid; grid-template-columns: 1fr auto 1fr; align-items: stretch; min-width: clamp(380px, 34vw, 520px); }
+.sb__main { display: grid; grid-template-columns: 1fr auto 1fr; align-items: stretch; min-width: clamp(380px, 34vw, 33rem); }
 .sb__team {
   display: flex; align-items: center; gap: var(--sp-2); padding: 0 var(--sp-4); background: var(--c-surface-solid);
-  position: relative; min-height: clamp(44px, 4.2vw, 56px);
+  position: relative; min-height: clamp(44px, 4.2vw, 3.5rem);
 }
 .sb__team--home { justify-content: flex-start; border-radius: var(--r-md) 0 0 0; box-shadow: inset 5px 0 0 var(--home); }
 .sb__team--away { justify-content: flex-end; flex-direction: row-reverse; border-radius: 0 var(--r-md) 0 0; box-shadow: inset -5px 0 0 var(--away); }
@@ -37,11 +37,11 @@
 .sb__dots { display: flex; gap: 5px; }
 .sb__dots[data-dots='away'] { justify-content: flex-end; flex-direction: row-reverse; }
 
-.k { position: relative; width: 14px; height: 14px; border-radius: 50%; display: inline-block; flex: none; }
+.k { position: relative; width: 0.875rem; height: 0.875rem; border-radius: 50%; display: inline-block; flex: none; }
 .k--goal { background: var(--c-pitch); }
-.k--goal::after { content: ''; position: absolute; left: 4px; top: 3px; width: 4px; height: 6px; border: solid var(--c-on-pitch); border-width: 0 2px 2px 0; transform: rotate(40deg); }
+.k--goal::after { content: ''; position: absolute; left: 29%; top: 21%; width: 29%; height: 43%; border: solid var(--c-on-pitch); border-width: 0 2px 2px 0; transform: rotate(40deg); }
 .k--miss { border: 2px solid var(--c-red); }
-.k--miss::before, .k--miss::after { content: ''; position: absolute; left: 50%; top: 50%; width: 8px; height: 2px; margin: -1px 0 0 -4px; background: var(--c-red); transform: rotate(45deg); }
+.k--miss::before, .k--miss::after { content: ''; position: absolute; left: 50%; top: 50%; width: 60%; height: 2px; margin: -1px 0 0 -30%; background: var(--c-red); transform: rotate(45deg); }
 .k--miss::after { transform: rotate(-45deg); }
 .k--todo { border: 2px solid rgb(255 255 255 / 0.22); }
 .k--next { border: 2px solid var(--c-text); animation: next 1.2s ease-in-out infinite; }
@@ -49,13 +49,13 @@
 
 .hud__pause {
   position: absolute; top: var(--safe); right: var(--safe); display: grid; justify-items: center; gap: 3px; z-index: 2;
-  width: 52px; padding: 10px 0 6px; border: 1px solid var(--c-line-2); border-radius: var(--r-md); cursor: pointer;
+  width: 3.25rem; padding: 0.6rem 0 0.4rem; border: 1px solid var(--c-line-2); border-radius: var(--r-md); cursor: pointer;
   background: var(--c-surface-solid); color: var(--c-text); font: inherit;
   transition: background-color var(--dur-micro) var(--ease);
 }
 .hud__pause:hover { background: var(--c-raised-2); }
 .hud__pause-icon { width: 14px; height: 16px; border-left: 5px solid currentColor; border-right: 5px solid currentColor; }
-.hud__pause-key { font-size: 10px; font-weight: 800; letter-spacing: 0.08em; color: var(--c-text-2); text-transform: uppercase; }
+.hud__pause-key { font-size: 0.625rem; font-weight: 800; letter-spacing: 0.08em; color: var(--c-text-2); text-transform: uppercase; }
 
 /* ---------- Turn banner (under the scoreboard) ---------- */
 .turn {
@@ -74,7 +74,7 @@
 /* ---------- Reticle / dive marker ---------- */
 .hud__reticle { position: absolute; left: 0; top: 0; width: 0; height: 0; z-index: 1; }
 .hud__reticle span {
-  position: absolute; left: -18px; top: -18px; width: 36px; height: 36px; border-radius: 50%;
+  position: absolute; left: -18px; top: -18px; width: 36px; height: 36px; border-radius: 50%; /* fixed size: it marks a point */
   border: 3px solid var(--c-text); box-shadow: 0 0 0 2px rgb(0 0 0 / 0.55), inset 0 0 0 2px rgb(0 0 0 / 0.35);
 }
 .hud__reticle span::before { content: ''; position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: var(--c-pitch); box-shadow: 0 0 0 2px rgb(0 0 0 / 0.5); }
@@ -101,13 +101,13 @@
 /* ---------- Meters (bottom right: the aim shot keeps the ball low centre and the striker left) ---------- */
 .meters {
   position: absolute; right: var(--safe); bottom: var(--safe); z-index: 1;
-  width: min(400px, 34vw); display: grid; gap: var(--sp-3); padding: var(--sp-3) var(--sp-4) var(--sp-4);
+  width: min(25rem, 34vw); display: grid; gap: var(--sp-3); padding: var(--sp-3) var(--sp-4) var(--sp-4);
   background: var(--c-surface); border: 1px solid var(--c-line); border-radius: var(--r-md); box-shadow: var(--shadow-1);
 }
 .meter { display: grid; gap: 6px; transition: opacity var(--dur-micro) var(--ease); }
 .meter__head { display: flex; justify-content: space-between; align-items: baseline; font-size: var(--fs-xs); font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--c-text-2); }
 .meter__head b { color: var(--c-text); font-size: var(--fs-sm); letter-spacing: 0.02em; font-variant-numeric: tabular-nums; }
-.meter__track { position: relative; height: 12px; background: var(--c-raised-2); border-radius: 2px; overflow: hidden; }
+.meter__track { position: relative; height: 0.75rem; background: var(--c-raised-2); border-radius: 2px; overflow: hidden; }
 .meter__fill { position: absolute; inset: 0; transform-origin: left; transform: scaleX(0); background: linear-gradient(90deg, #2a9e57, var(--c-pitch) 55%, var(--c-gold) 88%); }
 .meter__danger { position: absolute; inset: 0 0 0 92%; background: repeating-linear-gradient(-45deg, var(--c-red) 0 4px, rgb(240 86 90 / 0.35) 4px 8px); }
 .meters.is-over .meter__fill { background: var(--c-red); }
