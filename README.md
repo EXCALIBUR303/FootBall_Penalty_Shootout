@@ -1,6 +1,6 @@
 # Penalty Kings
 
-A 3D football penalty shootout for desktop Chromium, built with Vite and Three.js. Take five penalties each against an AI goalkeeper (then sudden death), or play a friend on the same keyboard.
+A 3D football penalty shootout for desktop browsers (developed and tested in Chromium), built with Vite and Three.js. Take five penalties each against an AI goalkeeper (then sudden death), or play a friend on the same keyboard.
 
 ## Run it
 
@@ -12,7 +12,7 @@ npm run preview    # serve the build
 npm test           # unit tests (rules, shot solver, Rapier physics, replay recorder)
 ```
 
-Needs a current Chromium-based browser with WebGL 2.
+Needs a current browser with WebGL 2. Developed and tested in Chromium; Safari 15+ should work (the High-quality post-processing falls back to direct rendering if float render targets are unavailable) but has not been tested here.
 
 ## How to play
 
@@ -22,7 +22,7 @@ Needs a current Chromium-based browser with WebGL 2.
 2. **Power:** hold <kbd>Space</kbd> (or press and hold) and release. The red striped end of the bar skies the ball.
 3. **Curve:** press again to stop the swinging marker. Curve bends the flight, not where it ends up.
 
-**In goal:** click or tap where to dive, before the kick to guess or after it to react. Keys: <kbd>←</kbd>/<kbd>A</kbd> <kbd>→</kbd>/<kbd>D</kbd> low dive, <kbd>Q</kbd> <kbd>E</kbd> high dive, <kbd>↓</kbd>/<kbd>S</kbd> block, <kbd>↑</kbd>/<kbd>W</kbd> jump.
+**In goal:** the camera sits just inside your goal, behind the keeper. Click or tap where to dive (the screen maps onto the goal mouth; a gold marker follows the pointer), before the kick to guess or after it to react. Keys: <kbd>←</kbd>/<kbd>A</kbd> <kbd>→</kbd>/<kbd>D</kbd> low dive, <kbd>Q</kbd> <kbd>E</kbd> high dive, <kbd>↓</kbd>/<kbd>S</kbd> block, <kbd>↑</kbd>/<kbd>W</kbd> jump.
 
 **2 players:** the shooter uses the mouse or arrows plus <kbd>Space</kbd>; the keeper uses <kbd>A</kbd> <kbd>D</kbd> <kbd>Q</kbd> <kbd>E</kbd> <kbd>S</kbd> <kbd>W</kbd>.
 
@@ -34,7 +34,7 @@ Needs a current Chromium-based browser with WebGL 2.
 
 ## Features
 
-- Imported GLB models only for the ball, goal and players; sky and pitch come from a CC0 HDRI projected onto a grounded dome.
+- Imported GLB models only for the ball, goal and players. The stadium is one CC0 panorama used twice: a sharp 4K tonemapped photo projected onto a grounded dome (what you see) and its HDR (what lights the scene). Painted pitch markings to Laws of the Game sizes; team kits painted onto the shared character in a shader.
 - Rapier physics with CCD ball, post/bar/net colliders, plus hand-written drag and Magnus (spin) forces. A shot solver aims the ball so the *predicted* line crossing hits your target; power overshoot and wobble are applied afterwards.
 - Keeper dive, block and jump animations authored as keyframes (the library rig has none) and a keeper AI with per-difficulty reaction time, read error, guessing and reach.
 - Cinematic cameras (aim, run-up, follow, reaction, keeper view, two replay angles) driven by damped springs; hard cuts under reduced motion.
@@ -48,7 +48,7 @@ Needs a current Chromium-based browser with WebGL 2.
 | | |
 |---|---|
 | Build | Vite 8, vanilla JavaScript (ES modules) |
-| 3D | three 0.186 (GLTFLoader + DRACOLoader, HDRLoader, GroundedSkybox, EffectComposer bloom, ACES tone mapping, sRGB) |
+| 3D | three 0.186 (GLTFLoader + DRACOLoader, HDRLoader, GroundedSkybox, EffectComposer bloom, Neutral tone mapping (ACES via `?tm=aces` in dev), sRGB) |
 | Physics | `@dimforge/rapier3d-compat` |
 | Asset tooling | `@gltf-transform/*` (dedupe, prune, resample, WebP textures, Draco) |
 | Tests | `node:test`; Playwright is used for QA scripts but is **not** a project dependency |
@@ -69,7 +69,7 @@ src/
   core/              renderer, post-processing, quality presets, settings, perf, disposal
   ui/                screens/dialogs, HUD, toast
   styles/            tokens (palette, type scale), base, ui, hud, loading
-public/assets/       models/, hdri/, audio/, fonts via src/assets/fonts
+public/assets/       models/, hdri/ (backdrop JPG + lighting HDR), audio/
 scripts/             asset pipeline and QA scripts (below)
 tests/               unit tests
 docs/PLAN.md         the Phase 0 research and plan

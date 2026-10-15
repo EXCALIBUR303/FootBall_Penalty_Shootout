@@ -76,7 +76,7 @@ what was tested, decisions needed).
   textured pitch plane only if the stadium has none.
 
 - Phase 1 status: HDRI (also used as pitch + stands via GroundedSkybox), ball, and one shared Quaternius
-  character (cloned + tinted for keeper/striker) are in. GOAL is in (CC0 soccerGoal from OpenGameArt, converted with scripts/convert-goal-blend.py); STADIUM GLB is still missing
+  character (cloned + kit-painted for keeper/striker) are in. GOAL is in (CC0 soccerGoal from OpenGameArt, converted with scripts/convert-goal-blend.py); STADIUM GLB is still missing
   (HDRI covers it): Poly Pizza is behind Cloudflare, Sketchfab downloads need login. Drop them in assets/raw/, run `npm run assets`, and add
   the files to src/assets/manifest.js (ids `goal`, `stadium` already listed).
 - Quaternius UAL has NO dive/parry/kick clips: authored in src/actors/clips.js (character-space angles,
@@ -93,5 +93,11 @@ what was tested, decisions needed).
   (phase `replay`, setting `autoReplay`). Perf = src/core/perf.js: `?stats` overlay, auto-downgrade to Low when
   slow (skipped under automation), scripts/leak-test.mjs checks GPU resources stay flat across matches.
   Software GL (swiftshader) runs ~2 fps on High / ~5 fps on Low, so test scripts never judge FPS, only relative cost.
+- Visual overhaul (after Phase 5): stadium = src/world/environment.js (4K tonemapped JPG backdrop with exact
+  per-pixel projection, dome centred near the spot, 1K HDR for lighting, Neutral tone mapping); pitch lines =
+  src/world/pitch.js; kits = src/world/kit.js (shader regions by bone + bind-pose height; kits in teams.js).
+  Camera springs are exact (director.js) — never go back to Euler steps (they exploded at low fps).
+  UI = tokens.css design system, ui.js screens, hud.js broadcast HUD. Visual QA: scripts/visual-qa.mjs
+  <outDir> [w h quality] (PORT env for a second dev server); docs/qa/ is git-ignored.
 - Phase 0 plan lives in `docs/PLAN.md`.
 - Git branch for development: `claude/3d-football-penalty-shootout-q6sult`.

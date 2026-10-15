@@ -11,11 +11,12 @@ Entries marked **not included** were chosen in `docs/PLAN.md` but could not be d
 | Goal + net | soccerGoal (normal version; stray poles removed, converted from .blend to GLB, Draco) | almaPerdida (OpenGameArt) | CC0 | https://opengameart.org/content/soccergoal | **in repo** |
 | Goalkeeper, striker | Mannequin + 43 clips, Universal Animation Library [Standard] (UAL1_Standard.glb) | Quaternius | CC0 | https://quaternius.itch.io/universal-animation-library | **in repo** |
 | Stadium | Stadium | Zsky (Poly Pizza) | CC-BY 3.0 | https://poly.pizza/search/stadium | **not included** (the HDRI provides the stadium) |
-| Sky HDRI | Stadium 01 (2K) | Sergej Majboroda (Poly Haven) | CC0 | https://polyhaven.com/a/stadium_01 | **in repo** |
+| Stadium backdrop | Stadium 01 — Poly Haven's tonemapped JPG, resized to 4096×2048; the photo's own goal behind ours painted out | Sergej Majboroda (Poly Haven) | CC0 | https://polyhaven.com/a/stadium_01 | **in repo** (`public/assets/hdri/stadium_01_bg_4k.jpg`) |
+| Lighting HDRI | Stadium 01 (1K .hdr) | Sergej Majboroda (Poly Haven) | CC0 | https://polyhaven.com/a/stadium_01 | **in repo** |
 | Sound effects (kick, post/bar, glove, catch, net) | Impact Sounds (12 files, trimmed to 7) | Kenney | CC0 | https://kenney.nl/assets/impact-sounds | **in repo** (`public/assets/audio/`) |
 | UI sounds (click, select, confirm, back, tick) | Interface Sounds (5 files) | Kenney | CC0 | https://kenney.nl/assets/interface-sounds | **in repo** |
+| Pitch markings, kit colours/patterns | drawn at runtime (`src/world/pitch.js`, `src/world/kit.js`) | this project | — | — | no file |
 | Crowd, cheers, groans, whistle | synthesised at runtime with Web Audio (`src/audio/audio.js`) | this project | — | — | no file |
-| UI font | Kenney Future (from Kenney Fonts) | Kenney | CC0 | https://kenney.nl/assets/kenney-fonts | **in repo** |
 
 ## Development-only test models (never shipped)
 
