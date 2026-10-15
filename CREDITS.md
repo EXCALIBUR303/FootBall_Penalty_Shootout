@@ -13,7 +13,7 @@ Entries marked **planned** are chosen in `docs/PLAN.md` but not yet downloaded (
 | Stadium | Stadium | Zsky (Poly Pizza) | CC-BY 3.0 | https://poly.pizza/search/stadium | planned |
 | Sky HDRI | Stadium 01 (2K) | Sergej Majboroda (Poly Haven) | CC0 | https://polyhaven.com/a/stadium_01 | **in repo** |
 | Sound effects | Impact Sounds, Interface Sounds | Kenney | CC0 | https://kenney.nl/assets | planned |
-| UI font | Kenney Future | Kenney | CC0 | https://kenney.nl/assets | planned |
+| UI font | Kenney Future (from Kenney Fonts) | Kenney | CC0 | https://kenney.nl/assets/kenney-fonts | **in repo** |
 
 ## Development-only test models (never shipped)
 
