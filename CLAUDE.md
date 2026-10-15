@@ -87,5 +87,11 @@ what was tested, decisions needed).
 - Phase 3: `/?play` (dev) skips the menu. UI QA: scripts/ui-tour.mjs (keyboard-only walk of every screen),
   scripts/responsive-shots.mjs (tablet/phone + touch). UI = src/ui/ui.js (screens/dialogs) + src/ui/hud.js;
   settings in src/core/settings.js; teams in src/game/teams.js.
+- Phase 4: audio = src/audio/audio.js (Kenney CC0 samples in public/assets/audio + synthesised crowd/whistle/cheers;
+  unlocks on first gesture; test with scripts/audio-test.mjs). Bloom/post = src/core/post.js (off on Low).
+  Effects = src/fx/effects.js; replay = src/game/replay.js (records bone transforms, plays back at 0.6x) wired in match.js
+  (phase `replay`, setting `autoReplay`). Perf = src/core/perf.js: `?stats` overlay, auto-downgrade to Low when
+  slow (skipped under automation), scripts/leak-test.mjs checks GPU resources stay flat across matches.
+  Software GL (swiftshader) runs ~2 fps on High / ~5 fps on Low, so test scripts never judge FPS, only relative cost.
 - Phase 0 plan lives in `docs/PLAN.md`.
 - Git branch for development: `claude/3d-football-penalty-shootout-q6sult`.
