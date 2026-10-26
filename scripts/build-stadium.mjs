@@ -105,6 +105,7 @@ for(const [key, parts] of groups) { const g=mergeGeometries(parts); emit('arena_
 function emit(name,g,key) {
   const a=(sem,attr,type)=>doc.createAccessor().setType(type).setArray(g.getAttribute(attr).array).setBuffer(buffer);
   const p=doc.createPrimitive().setAttribute('POSITION',a('POSITION','position','VEC3')).setAttribute('NORMAL',a('NORMAL','normal','VEC3'));
+  if(g.index)p.setIndices(doc.createAccessor().setType('SCALAR').setArray(g.index.array).setBuffer(buffer));
   if(g.getAttribute('uv')) p.setAttribute('TEXCOORD_0',a('TEXCOORD_0','uv','VEC2'));
   const c=new T.Color(palette[key]||'#e9f4ff');
   const m=doc.createMaterial(key).setBaseColorFactor([c.r,c.g,c.b,1]).setRoughnessFactor(0.85).setMetallicFactor(0).setDoubleSided(name.startsWith('BANNER_'));

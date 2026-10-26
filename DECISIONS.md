@@ -73,3 +73,15 @@ Each entry records the decision, alternatives, reason, and reversal. No web cont
 - Alternatives: hide the spot to remove the white oval seen in extreme ball close-ups; add a replacement shadow decal.
 - Why: the oval is the painted 0.22 m penalty mark, not a ball mesh or shadow artifact. It is correct pitch information and reads properly at the gameplay camera distance.
 - Reverse: change MARKINGS.spot.radius in src/world/pitch.js if a different artistic size is preferred.
+
+## 13. Export indexed panel meshes correctly
+- Decision: write source index buffers into glTF primitives for the LED boxes and segmented cloth planes. Validate expected board and flag index counts as well as UV presence.
+- Alternatives: convert every source mesh to non-indexed data; patch UVs or geometry at runtime; accept colour-only boards.
+- Why: close visual inspection after the UV fix showed stretched horizontal bands. The builder emitted indexed vertex arrays without their indices, so some triangles were degenerate or connected across faces. Preserve the actual source topology in the reproducible GLB.
+- Reverse: convert indexed inputs to non-indexed geometry before emission instead; do not remove indices without that conversion.
+
+## 14. Scope QA process cleanup
+- Decision: stop only task-owned QA Node processes and their directly verified browser children, using their exact PIDs after inspecting the parent relationship.
+- Alternatives: terminate all Chromium processes; leave abandoned QA renders consuming CPU.
+- Why: automatic approval review rejected a broad Chromium cleanup because it could affect unrelated browser sessions. Exact ownership checks allow a safer task-scoped cleanup without requesting approval or disturbing unrelated sessions.
+- Reverse: rerun the documented QA command; only temporary test sessions were closed.
