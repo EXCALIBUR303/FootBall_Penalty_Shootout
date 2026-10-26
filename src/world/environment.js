@@ -1,106 +1,65 @@
-import * as THREE from 'three';
-import { GroundedSkybox } from 'three/examples/jsm/objects/GroundedSkybox.js';
+import * as T from 'three';
 import { preset } from '../core/quality.js';
+import { createCrowd } from './crowd.js';
 
-/**
- * Stadium environment from one Poly Haven panorama ("Stadium 01", CC0), used two ways:
- *
- *  - What you SEE is the 4K tonemapped photo, projected onto a dome whose floor is the pitch. A display-
- *    referred photo keeps the stands and sky at the exposure the photographer graded, instead of the
- *    washed-out look the raw HDR gets through tone mapping.
- *  - What LIGHTS the players, ball and goal is the 1K HDR (prefiltered into an environment map), so the
- *    lighting matches the photo.
- *
- * The dome is centred near the penalty spot rather than on the goal: a projected floor is sharpest close to
- * its centre, and the cameras spend their time between the goal and the spot.
- */
-export const STADIUM = {
-  height: 1.7, // camera height of the panorama (m) — sets the floor scale
-  radius: 60, // how far the projected floor reaches before it curves up into the stands
-  centreZ: 8,
-  // Turns the panorama so its pitch runs along ours: the photo's own goal sits straight behind our goal
-  // (hidden behind it from the shooting cameras) and the long stands run down the sides.
-  yaw: THREE.MathUtils.degToRad(-87),
-};
-
+/** Explicit night lighting; there is no photographic background or daylight HDR. */
 export function buildEnvironment(renderer, scene, assets) {
-  let hdrTex = null;
-  if (assets.hdri) {
-    hdrTex = new THREE.DataTexture(assets.hdri.data, assets.hdri.width, assets.hdri.height, assets.hdri.format, assets.hdri.type);
-    hdrTex.flipY = true; // HDRLoader.parse returns rows bottom-up; load() would set this for us
-    hdrTex.mapping = THREE.EquirectangularReflectionMapping;
-    hdrTex.colorSpace = THREE.LinearSRGBColorSpace;
-    hdrTex.minFilter = hdrTex.magFilter = THREE.LinearFilter;
-    hdrTex.needsUpdate = true;
-    const pmrem = new THREE.PMREMGenerator(renderer);
-    scene.environment = pmrem.fromEquirectangular(hdrTex).texture;
-    pmrem.dispose();
-    scene.environmentRotation.y = STADIUM.yaw;
-  }
-
-  let map = null;
-  if (assets.backdrop) {
-    map = new THREE.Texture(assets.backdrop);
-    map.colorSpace = THREE.SRGBColorSpace;
-    map.generateMipmaps = true;
-    map.minFilter = THREE.LinearMipmapLinearFilter;
-    map.needsUpdate = true;
-  } else if (hdrTex) {
-    map = hdrTex; // fallback: show the HDR itself, as before
-  }
-
-  let sky = null;
-  if (map) {
-    // The lookup is per pixel (below), so vertex density only shapes the dome: 64 rings ≈ 16k triangles.
-    sky = new GroundedSkybox(map, STADIUM.height, STADIUM.radius, 64);
-    sky.name = 'stadium';
-    sky.position.set(0, STADIUM.height, STADIUM.centreZ); // floor at y = 0
-    sky.rotation.y = STADIUM.yaw;
-    sky.renderOrder = -1;
-    exactProjection(sky.material);
-    applyBackdropQuality(sky, renderer);
-    scene.add(sky);
-  } else {
-    scene.background = new THREE.Color(0x0b1220);
-  }
-  return { sky, hdrTex };
-}
-
-/** Backdrop filtering follows the quality preset; call again when the preset changes. */
-export function applyBackdropQuality(sky, renderer) {
-  const map = sky?.material.map;
-  if (!map) return;
-  const n = Math.max(1, Math.min(preset().anisotropy, renderer.capabilities.getMaxAnisotropy()));
-  if (map.anisotropy === n) return;
-  map.anisotropy = n;
-  map.needsUpdate = true; // re-uploads with the new sampler setting
-}
-
-/**
- * GroundedSkybox interpolates the panorama's UVs per vertex, which warps the flattened floor between rings.
- * Its vertices were only scaled along their direction from the centre, so the original view direction is
- * just the normalised local position: compute the equirectangular lookup per pixel from that instead.
- * textureGrad with derivatives of a seam-free longitude avoids the one-pixel mip seam where u wraps.
- */
-function exactProjection(material) {
-  material.onBeforeCompile = (shader) => {
-    shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vSkyDir;')
-      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvSkyDir = position;');
-    shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vSkyDir;')
-      .replace('#include <map_fragment>', /* glsl */ `
-        vec3 skyD = normalize(vSkyDir);
-        // SphereGeometry (with GroundedSkybox's z flip): x = -cos(phi) sin(theta), z = -sin(phi) sin(theta).
-        float skyU = atan(-skyD.z, -skyD.x) / (2.0 * PI);      // -0.5 .. 0.5
-        float skyV = 1.0 - acos(clamp(skyD.y, -1.0, 1.0)) / PI;
-        float uA = fract(skyU);
-        float uB = fract(skyU + 0.5) - 0.5;                    // continuous where uA wraps
-        vec2 gxA = vec2(dFdx(uA), dFdx(skyV)), gyA = vec2(dFdy(uA), dFdy(skyV));
-        vec2 gxB = vec2(dFdx(uB), dFdx(skyV)), gyB = vec2(dFdy(uB), dFdy(skyV));
-        bool useB = abs(gxB.x) + abs(gyB.x) < abs(gxA.x) + abs(gyA.x);
-        vec4 sampledDiffuseColor = textureGrad(map, vec2(uA, skyV), useB ? gxB : gxA, useB ? gyB : gyA);
-        diffuseColor *= sampledDiffuseColor;`);
+  scene.background=new T.Color('#040b18');
+  scene.fog=new T.FogExp2('#091426',0.0045);
+  const stadium=assets.stadium?.scene;
+  if(stadium) scene.add(stadium);
+  const crowd=createCrowd(scene,stadium?.getObjectByName('CROWD_TEMPLATE'));
+  const canvas=document.createElement('canvas');canvas.width=2048;canvas.height=128;
+  const ctx=canvas.getContext('2d');
+  const led=new T.CanvasTexture(canvas);led.colorSpace=T.SRGBColorSpace;led.wrapS=T.RepeatWrapping;led.repeat.x=2;
+  const drawRibbon=()=>{
+    ctx.fillStyle='#124864';ctx.fillRect(0,0,2048,128);
+    const brands=['NOVA / SPORT','MERIDIAN / NIGHT LEAGUE','APEX / ENERGY','PENALTY KINGS'];
+    brands.forEach((s,i)=>{ctx.fillStyle=i%2?'#7c5333':'#124864';ctx.fillRect(i*512,0,512,128);ctx.fillStyle=i%2?'#ffe0ad':'#b5f2ff';ctx.font='italic 900 44px system-ui';ctx.fillText(s,i*512+28,78);ctx.fillRect(i*512,20,4,88);});
+    ctx.fillStyle='#00000030';for(let y=0;y<128;y+=4)ctx.fillRect(0,y,2048,1);
+    led.needsUpdate=true;
   };
-  material.customProgramCacheKey = () => 'grounded-sky-exact';
+  drawRibbon();
+  const grass=grassTexture();
+  const bannerTime={value:0}, bannerMotion={value:1};
+  stadium?.traverse(o=>{
+    if(!o.isMesh)return;
+    o.receiveShadow=true;o.castShadow=false;
+    if(o.material?.name==='turfA'||o.material?.name==='turfB') {o.material.map=grass;o.material.roughness=1;o.material.needsUpdate=true;}
+    if(o.name.startsWith('BANNER_')) {
+      const i=Number(o.name.split('_')[1]);
+      const c=document.createElement('canvas');c.width=512;c.height=256;const g=c.getContext('2d');
+      g.fillStyle=i<2?'#174f94':'#912c41';g.fillRect(0,0,512,256);g.strokeStyle='#e8bd72';g.lineWidth=15;g.strokeRect(16,16,480,224);
+      g.fillStyle='#f6dfb5';g.font='italic 900 52px system-ui';g.textAlign='center';g.fillText(i<2?'LIONS ROAR':'FOXES RISE',256,145);
+      const t=new T.CanvasTexture(c);t.colorSpace=T.SRGBColorSpace;
+      o.material=new T.MeshStandardMaterial({map:t,side:T.DoubleSide,roughness:1});
+      o.material.onBeforeCompile=shader=>{Object.assign(shader.uniforms,{uFlagTime:bannerTime,uFlagMotion:bannerMotion});shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nuniform float uFlagTime,uFlagMotion;').replace('#include <begin_vertex>','#include <begin_vertex>\ntransformed.z+=sin(uv.x*8.0+uFlagTime*2.0)*uv.x*0.18*uFlagMotion;');};
+      o.material.customProgramCacheKey=()=> 'supporter-flag';
+    }
+    if(o.name.startsWith('LED_'))o.material=new T.MeshStandardMaterial({map:led,emissiveMap:led,emissive:'#ffffff',emissiveIntensity:0.65,roughness:0.6});
+  });
+  // Volumetric-looking floodlight shafts and glare are lightweight effects, not stadium geometry.
+  const effects=new T.Group(); effects.name='floodlight-haze';scene.add(effects);
+  const glow=glareTexture();
+  for(const x of [-39,39])for(const z of [-9,114]){
+    const top=new T.Vector3(x,26,z), target=new T.Vector3(x*0.25,0,z<0?13:92);
+    const cone=new T.Mesh(new T.ConeGeometry(10,32,20,1,true),new T.MeshBasicMaterial({color:'#86bfff',transparent:true,opacity:0.025,depthWrite:false,side:T.DoubleSide,blending:T.AdditiveBlending}));
+    const dir=top.clone().sub(target).normalize();cone.position.copy(top).addScaledVector(dir,-16);cone.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),dir);effects.add(cone);
+    const sprite=new T.Sprite(new T.SpriteMaterial({map:glow,color:'#acd9ff',transparent:true,opacity:0.65,depthWrite:false,blending:T.AdditiveBlending}));sprite.position.copy(top);sprite.scale.set(13,13,1);effects.add(sprite);
+  }
+  let t=0;
+  const api={sky:null,crowd,quality(){crowd.quality(preset().name==='low');grass.anisotropy=Math.min(preset().anisotropy,renderer.capabilities.getMaxAnisotropy());led.anisotropy=Math.min(preset().anisotropy,renderer.capabilities.getMaxAnisotropy());},
+    update(dt,reduced){bannerMotion.value=reduced?0:1;if(!reduced)bannerTime.value+=dt;crowd.update(dt,reduced);if(!reduced){t+=dt;led.offset.x=t*0.018;}},dispose(){led.dispose();glow.dispose();grass.dispose();}};
+  api.quality(); return api;
+}
+function glareTexture(){
+  const c=document.createElement('canvas');c.width=c.height=128;const g=c.getContext('2d');
+  const r=g.createRadialGradient(64,64,0,64,64,64);r.addColorStop(0,'white');r.addColorStop(0.08,'#c8eaffdd');r.addColorStop(0.3,'#8fcfff35');r.addColorStop(1,'#68baff00');g.fillStyle=r;g.fillRect(0,0,128,128);return new T.CanvasTexture(c);
+}
+
+function grassTexture(){
+  const c=document.createElement('canvas');c.width=c.height=256;const g=c.getContext('2d');
+  const img=g.createImageData(256,256);let seed=17;
+  for(let i=0;i<img.data.length;i+=4){seed=(seed*1664525+1013904223)>>>0;const v=220+(seed%35);img.data.set([v,v,v,255],i);}
+  g.putImageData(img,0,0);const t=new T.CanvasTexture(c);t.colorSpace=T.SRGBColorSpace;t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(34,3);return t;
 }

@@ -6,7 +6,6 @@ import { GAME_ASSETS, TEST_ASSETS, PITCH } from './assets/manifest.js';
 import { loadAssets } from './assets/loader.js';
 import { createRenderer, watchResize } from './core/renderer.js';
 import { buildScene } from './world/scene.js';
-import { applyBackdropQuality } from './world/environment.js';
 import { disposeTree } from './core/dispose.js';
 import { settings } from './core/settings.js';
 import { setQuality, preset } from './core/quality.js';
@@ -15,6 +14,7 @@ import { createUI } from './ui/ui.js';
 import { createAudio } from './audio/audio.js';
 import { createPerf } from './core/perf.js';
 import { toast } from './ui/toast.js';
+import './styles/broadcast.css';
 
 const loadingEl = document.getElementById('loading');
 const fillEl = loadingEl.querySelector('.loading__fill');
@@ -29,6 +29,7 @@ async function boot() {
   const canvas = document.getElementById('game');
   setQuality(settings.get('quality')); // quality.js reads its own key; keep the two in step
   const renderer = createRenderer(canvas);
+  renderer.info.autoReset=false; // include the scene and every post pass in frame statistics
 
   const entries = testMode ? TEST_ASSETS : GAME_ASSETS;
   const { assets, missing, optionalMissing } = await loadAssets(entries, ({ fraction, label }) => {
@@ -90,6 +91,7 @@ async function boot() {
   });
   function onEvent(type, data) {
     audio.onMatchEvent(type, data);
+    if (type === 'result' && ['goal','saved'].includes(data.outcome)) world.environment.crowd.react();
     if (type === 'over') ui.showEnd(data);
   }
   // UI sounds: one delegated listener over the whole interface layer.
@@ -111,7 +113,7 @@ async function boot() {
         setQuality(v);
         resize.apply(); // devicePixelRatio cap
         post.apply(); // bloom on/off
-        applyBackdropQuality(world.sky, renderer); // texture filtering
+        world.environment.quality();
         const size = preset(v).shadowMap;
         world.sun.shadow.mapSize.set(size, size);
         world.sun.shadow.map?.dispose(); // re-allocated at the new size on the next frame
@@ -145,16 +147,19 @@ async function boot() {
       world.striker?.update(dt);
       if (!params.has('pose')) orbit(dt);
     }
+    world.net.update(game?.paused ? 0 : dt, settings.get('reducedMotion'));
+    world.environment.update(game?.paused ? 0 : dt, settings.get('reducedMotion'));
+    renderer.info.reset();
     post.render(dt);
   });
 
   // Slow broadcast-style orbit behind the menu (a static wide shot with reduced motion).
   function orbit(dt) {
     menuT += settings.get('reducedMotion') ? 0 : dt;
-    const a = -0.5 + Math.sin(menuT * 0.06) * 0.5;
-    camera.position.set(Math.sin(a) * 15, 3.2 + Math.sin(menuT * 0.11) * 0.3, 6 + Math.cos(a) * 15);
-    camera.lookAt(0, 1.0, 4.5);
-    if (camera.fov !== 42) { camera.fov = 42; camera.updateProjectionMatrix(); }
+    const a = 0.20 + Math.sin(menuT * 0.06) * 0.16;
+    camera.position.set(Math.sin(a)*38, 5.5 + Math.sin(menuT*0.11)*0.2, 6+Math.cos(a)*38);
+    camera.lookAt(0, 5.0, -5);
+    if (camera.fov !== 48) { camera.fov = 48; camera.updateProjectionMatrix(); }
   }
 
   loadingEl.classList.add('is-done');
@@ -181,6 +186,8 @@ async function boot() {
     perf.dispose();
     game?.dispose();
     audio.dispose();
+    Object.values(world.kits).forEach(k=>k.dispose?.());
+    world.environment.dispose();
     disposeTree(scene);
     renderer.dispose();
   });

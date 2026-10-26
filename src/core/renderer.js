@@ -4,12 +4,8 @@ import { preset } from './quality.js';
 export function createRenderer(canvas) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
   renderer.outputColorSpace = THREE.SRGBColorSpace;
-  // Neutral (Khronos PBR Neutral) rather than ACES: the stadium is a display-referred photo, and Neutral leaves
-  // everything below ~0.8 untouched, so the backdrop keeps its grading while bright HDR highlights on the
-  // players, ball and goal still roll off smoothly. ACES desaturated and lifted the photo (washed-out stands).
-  // `?tm=aces` (dev) switches back for comparison.
-  const aces = import.meta.env.DEV && new URLSearchParams(location.search).get('tm') === 'aces';
-  renderer.toneMapping = aces ? THREE.ACESFilmicToneMapping : THREE.NeutralToneMapping;
+  // ACES rolls off floodlights while preserving the warm/cool night contrast.
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.0;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFShadowMap; // PCFSoftShadowMap was removed; PCF is now the soft filter
@@ -33,5 +29,5 @@ export function watchResize(renderer, camera, canvas, onResize = () => {}) {
   let media = mq();
   const onDpr = () => { apply(); media.removeEventListener('change', onDpr); media = mq(); media.addEventListener('change', onDpr); };
   media.addEventListener('change', onDpr);
-  return { apply, dispose: () => window.removeEventListener('resize', apply) };
+  return { apply, dispose: () => {window.removeEventListener('resize', apply);media.removeEventListener('change',onDpr);} };
 }

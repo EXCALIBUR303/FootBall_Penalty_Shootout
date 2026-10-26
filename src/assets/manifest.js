@@ -10,11 +10,7 @@
 
 /** @type {AssetEntry[]} */
 export const GAME_ASSETS = [
-  // Lighting: a small HDR (it is blurred into the environment map anyway).
-  { id: 'hdri', type: 'hdr', url: 'assets/hdri/stadium_01_1k.hdr', label: 'lighting' },
-  // What you see: the same panorama as a sharp, tonemapped 4K photo (projected onto the pitch and stands).
-  { id: 'backdrop', type: 'image', url: 'assets/hdri/stadium_01_bg_4k.jpg', label: 'stadium', optional: true },
-  { id: 'stadium', type: 'glb', url: 'assets/models/stadium.glb', label: 'stadium', optional: true }, // HDRI covers it
+  { id: 'stadium', type: 'glb', url: 'assets/models/stadium.glb', label: 'Meridian Arena' },
   { id: 'goal', type: 'glb', url: 'assets/models/goal.glb', label: 'goal', optional: true }, // CC0 soccerGoal; the physics goal exists regardless
   { id: 'ball', type: 'glb', url: 'assets/models/ball.glb', label: 'ball' },
   // One Quaternius rig serves both players; the scene clones it per role and tints the kit.

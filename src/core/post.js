@@ -33,9 +33,8 @@ export function createPost(renderer, scene, camera) {
     target = new THREE.WebGLRenderTarget(size.x, size.y, { type: THREE.HalfFloatType, samples: samplesFor() });
     composer = new EffectComposer(renderer, target);
     composer.addPass(new RenderPass(scene, camera));
-    // The stadium backdrop is a display-referred photo (≤ 1.0), so only true HDR highlights cross this
-    // threshold: sunlit kit whites, the posts, spark and confetti glints. Light touch by design.
-    bloom = new UnrealBloomPass(new THREE.Vector2(size.x, size.y), 0.14, 0.35, 1.15);
+    // A high threshold blooms emissive floodlights and ribbon glints without haloing kit edges.
+    bloom = new UnrealBloomPass(new THREE.Vector2(size.x, size.y), 0.22, 0.4, 1.45);
     composer.addPass(bloom);
     composer.addPass(new OutputPass());
   }
@@ -64,6 +63,7 @@ export function createPost(renderer, scene, camera) {
       else renderer.render(scene, camera);
     },
     dispose() {
+      for(const pass of composer?.passes ?? [])pass.dispose?.();
       composer?.dispose();
       composer = null;
     },

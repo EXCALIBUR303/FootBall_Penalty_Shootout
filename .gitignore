@@ -6,3 +6,6 @@ public/assets/models/Fox.glb
 public/assets/models/CesiumMan.glb
 docs/phase1-smoke.png
 docs/qa/
+
+# Local overhaul scratch, dependencies cache and QA logs
+work/

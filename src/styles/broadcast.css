@@ -1,0 +1,64 @@
+/* Night-league finish: shared ice/gold palette, chamfered plates and thin luminous rules. */
+:root { --c-pitch:#ffcb81; --c-pitch-hi:#ffdcaa; --c-on-pitch:#17110a; --c-gold:#ffcb81; --c-red:#ff8089; --c-text-3:#a0aec3; --r-md:3px; --r-lg:5px; }
+.arena-id { position:absolute;right:var(--safe);top:var(--safe);display:grid;gap:5px;text-align:right;color:var(--c-text);border-right:3px solid #72dfff;padding-right:14px; }
+.arena-id strong { font-size:var(--fs-sm);text-transform:uppercase;letter-spacing:0.12em; }
+.arena-id small { color:var(--c-text-2);font-size:0.65rem;text-transform:uppercase;letter-spacing:0.1em; }
+.live-chip { font-size:0.65rem;color:#72dfff;text-transform:uppercase;font-weight:800;letter-spacing:0.2em; }
+.live-chip::before { content:'';display:inline-block;width:5px;height:5px;background:#72dfff;margin-right:7px;vertical-align:2px; }
+.wordmark__top { color:#72dfff; }
+.wordmark__main { letter-spacing:-0.045em; }
+.screen--menu { background:linear-gradient(90deg,#050b17e8 0%,#050b1780 35%,transparent 65%),linear-gradient(0deg,#040b18aa,transparent 25%); }
+.btn--hero { box-shadow:0 8px 32px #ffc67a18;clip-path:polygon(0 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%); }
+.btn--hero:focus-visible { clip-path:none; }
+.menu__item { border-bottom:1px solid #ffffff0d;background:#0c1727b3; }
+.setup { border-top:2px solid #72dfff; }
+.team-card { background:radial-gradient(ellipse at 50% 35%,color-mix(in srgb,var(--team) 28%,#142238),#0c1525 75%); }
+.team-card__badge { height:120px;transform:rotate(-5deg); }
+.team-card__kit-label { color:var(--c-text-2);font-size:0.6rem;font-weight:700;letter-spacing:0.17em;text-transform:uppercase; }
+.sb { border-top:2px solid #72dfff; }
+.sb__label { display:flex;justify-content:space-between;gap:24px;background:#091527;padding:5px 10px;font-size:0.55rem;text-transform:uppercase;letter-spacing:0.15em;font-weight:800;color:#adc4dc; }
+.sb__label span:first-child { color:#72dfff; }
+.sb__score { background:#d9e8ef; }
+.sb__team--home,.sb__team--away { border-radius:0; }
+.sb__strip { border-bottom:1px solid #5b8eb455; }
+.turn { top:auto;bottom:calc(var(--safe) + 80px);left:var(--safe);transform:translateX(-12px);min-width:260px;filter:drop-shadow(0 8px 22px #0008); }
+.turn__number { display:grid;place-items:center;background:var(--t);color:#0a1321;font-size:2.7rem;font-weight:900;padding:8px 14px; }
+.turn__identity { display:grid;background:#0a1526ee;padding:10px 20px;gap:2px;border-top:2px solid var(--t); }
+.turn__team { padding:0;background:none;color:var(--t);font-size:0.6rem;display:block;letter-spacing:0.14em; }
+.turn__text { padding:0;background:none;font-size:1.65rem;line-height:1.1; }
+.turn__identity small { font-style:normal;font-size:0.65rem;color:var(--c-text-2);font-weight:600; }
+.turn.is-shown { animation:intro 2600ms var(--ease) both; }
+@keyframes intro { 8%,85% {opacity:1;transform:none;}100% {opacity:0;transform:translateX(-12px);} }
+.meters { border-top:2px solid #72dfff;gap:8px; }
+.meter__track { height:14px;background:repeating-linear-gradient(90deg,#172a40 0 9%,#38516b 9% 10%); }
+.meter__fill { background:linear-gradient(90deg,#4aabc7,#85e2ec 60%,#ffcb81 88%); }
+.meter__sweet { position:absolute;top:0;bottom:0;left:67%;width:18%;border:1px solid #eefaff80; }
+.meter__note { color:var(--c-text-2);font-size:0.65rem;line-height:1.3; }
+.meter--curve { opacity:0.68; }
+.lt__body { border-top:1px solid color-mix(in srgb,var(--team) 55%,transparent);padding:16px 28px; }
+.lt__title { font-size:clamp(2.5rem,5vw,4.5rem);letter-spacing:-0.025em; }
+.lt[data-kind='saved'] .lt__title { color:#87dded; }
+[data-dialog='end'] .dialog__card { border-top:3px solid var(--c-gold);background:radial-gradient(ellipse at 50% 0%,#2d3240,#0b1424 65%); }
+.end__score { text-shadow:0 4px 26px #72dfff25; }
+@media(max-width:600px){
+ .arena-id { top:18px;right:18px; }.arena-id small{display:none;}.arena-id strong{font-size:0.65rem;}.live-chip{font-size:0.55rem;}
+ .screen--menu {padding-top:80px;}
+ .team-card__badge {height:86px;}.team-card__badge .shirt{width:86px;height:86px;}.team-card__kit-label{font-size:0.5rem;letter-spacing:0.03em;}
+ .turn {bottom:170px;min-width:220px;}.turn__number{font-size:2rem;}.turn__text{font-size:1.2rem;}
+ .sb__label{font-size:0.46rem;padding:4px 8px;gap:10px;}
+}
+@media(max-height:600px) and (min-width:601px){.arena-id{top:18px;}.team-card__badge{height:76px;}.team-card__badge .shirt{width:76px;height:76px;}.turn{bottom:115px;}.turn__number{font-size:2rem;}}
+@media(prefers-reduced-motion:reduce){.turn.is-shown{animation:none;opacity:1;transform:none;}}
+.reduce-motion .turn.is-shown{animation:none;opacity:1;transform:none;}
+/* Short laptop/landscape windows keep the entire wordmark, controls and key hints in view. */
+@media(max-height:640px) and (min-width:561px){
+ .screen--menu{align-content:center;padding-top:18px;padding-bottom:56px;}
+ .menu{gap:14px;width:min(390px,48vw);}.wordmark{--fs-hero:3.4rem;}.menu__tag{font-size:0.9rem;margin:0;}
+ .menu__nav{gap:5px;}.menu__item{padding:8px 14px;}.menu__label{font-size:1rem;}.menu__hint{font-size:0.72rem;}
+ .btn--hero{min-height:64px;padding:12px 18px;margin-bottom:5px;}.btn__title{font-size:1.4rem;}.btn__sub{font-size:0.72rem;}
+ .screen__keys{bottom:14px;font-size:0.72rem;}
+}
+@media(max-width:860px){
+ .team-card__kit-label{display:none;}.team-card__badge{height:auto;}.team-card__badge .shirt{width:56px;height:56px;}
+}
+@media(max-width:560px){.team-card__badge .shirt{width:44px;height:44px;}}

@@ -11,11 +11,8 @@ import { Striker } from '../actors/striker.js';
 import { buildEnvironment } from './environment.js';
 import { addPitchMarkings } from './pitch.js';
 import { applyKit } from './kit.js';
+import { createNetRipple } from '../fx/net.js';
 import { TEAMS, KEEPER_KIT } from '../game/teams.js';
-
-// Kit colours (see docs/PLAN.md palette). The Quaternius mannequin has a body material ("M_Main") we tint.
-// Sun direction in pitch space (towards the light).
-const SUN_DIR = new THREE.Vector3(-0.5, 0.62, 0.55).normalize(); // azimuth from the HDR, elevation ~38°
 
 export const KIT = { keeper: 0xc6f432, home: 0x5b9cff, away: 0xff8a3d };
 
@@ -30,35 +27,24 @@ export function buildScene(renderer, assets) {
   const env = buildEnvironment(renderer, scene, assets);
   addPitchMarkings(scene);
 
-  // Invisible floor that only receives shadows, so players and ball are grounded on the photo pitch.
-  const shadowFloor = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), new THREE.ShadowMaterial({ opacity: 0.5, color: 0x0b1a08 }));
-  shadowFloor.rotation.x = -Math.PI / 2;
-  shadowFloor.position.y = 0.002;
-  shadowFloor.receiveShadow = true;
-  scene.add(shadowFloor);
-
-  // --- Lights (lights are not visuals; the models are) --------------------------------------
-  scene.add(new THREE.HemisphereLight(0xdfeaff, 0x2a3b22, assets.hdri ? 0.25 : 0.9));
-  // The panorama's sun (measured from the HDR: low, from behind the shooter's left) gives the shadow
-  // direction; it is raised from ~10° to ~38° so shadows stay short enough to read under the players.
-  const sun = new THREE.DirectionalLight(0xffe9c9, 1.8);
-  sun.position.copy(SUN_DIR).multiplyScalar(40).add(new THREE.Vector3(0, 0, 6));
+  // Cool overhead fill and warm key. Only the key casts shadows; four tower glints are emissive.
+  scene.add(new THREE.HemisphereLight(0x99caff, 0x163d2c, 1.0));
+  const sun = new THREE.DirectionalLight(0xffdbab, 3.0);
+  sun.position.set(-18,28,16);
   sun.castShadow = true;
   const sm = preset().shadowMap;
-  sun.shadow.mapSize.set(sm, sm);
-  Object.assign(sun.shadow.camera, { left: -18, right: 18, top: 16, bottom: -16, near: 10, far: 80 });
-  sun.shadow.bias = -0.0003;
-  sun.shadow.normalBias = 0.02;
-  sun.shadow.radius = 4; // softens PCF edges
-  sun.target.position.set(0, 0, 6);
-  scene.add(sun, sun.target);
+  sun.shadow.mapSize.set(sm,sm);
+  Object.assign(sun.shadow.camera,{left:-18,right:18,top:20,bottom:-20,near:1,far:90});
+  sun.shadow.bias=-0.0003;sun.shadow.normalBias=0.025;
+  sun.target.position.set(0,0,7);
+  scene.add(sun,sun.target);
+  const rim = new THREE.DirectionalLight(0x8dd6ff, 2.3);
+  rim.position.set(14,18,-10);scene.add(rim);
+  const fill = new THREE.DirectionalLight(0xb2d5ff, 0.7);
+  fill.position.set(0,12,35);scene.add(fill);
 
   // --- Static models ------------------------------------------------------------------------
   let goal = null;
-  if (assets.stadium) {
-    enableShadows(assets.stadium.scene, { cast: false, receive: true });
-    scene.add(assets.stadium.scene); // stadium GLB is expected in pitch space
-  }
   if (assets.goal) {
     goal = fitModel(assets.goal.scene, 'width', TARGET_SIZE.goalOuterWidth);
     // fitModel centres the model on z; slide it back so the front of the posts sits on the goal line (z = 0).
@@ -69,6 +55,8 @@ export function buildScene(renderer, assets) {
     styleGoal(goal);
     scene.add(goal);
   }
+
+  const net = createNetRipple(goal);
 
   // Ball: centred on its own origin so it can copy the physics body's position and rotation directly.
   let ball = null;
@@ -113,7 +101,7 @@ export function buildScene(renderer, assets) {
   camera.position.set(0, 1.75, PITCH.penaltySpotZ + 6.5);
   camera.lookAt(0, 1.1, 0);
 
-  return { scene, camera, ball, goal, keeper, striker, kits, sun, sky: env.sky };
+  return { scene, camera, ball, goal, keeper, striker, kits, sun, sky: env.sky, environment: env, net };
 }
 
 /**

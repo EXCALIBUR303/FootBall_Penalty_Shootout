@@ -30,6 +30,14 @@ export function addPitchMarkings(scene) {
     strip(x, 0, x, z + w / 2);
     strip(-x - w / 2, z, x + w / 2, z);
   }
+  strip(-34,0,-34,105);strip(34,0,34,105);strip(-34,105,34,105);
+  strip(-34,52.5,34,52.5);
+  parts.push(arcGeometry(0,52.5,9.15,w,0,Math.PI*2,96));
+  for (const box of [M.goalArea,M.penaltyArea]) {
+    strip(-box.halfWidth,105,-box.halfWidth,105-box.depth);
+    strip(box.halfWidth,105,box.halfWidth,105-box.depth);
+    strip(-box.halfWidth,105-box.depth,box.halfWidth,105-box.depth);
+  }
   // Penalty mark and the arc of the penalty area (only the part outside the box is painted).
   parts.push(new THREE.CircleGeometry(M.spot.radius, 24).rotateX(-Math.PI / 2).translate(0, 0, M.spot.z));
   const outside = Math.acos((M.penaltyArea.depth - M.spot.z) / M.arcRadius); // half-angle of the visible arc
@@ -39,7 +47,7 @@ export function addPitchMarkings(scene) {
   parts.forEach((g) => g.dispose());
   const material = new THREE.MeshStandardMaterial({
     name: 'pitch_lines',
-    color: 0xdfe5d8, // chalk white, a touch green from the grass under it (pure white glows next to the photo)
+    color: 0xe4f4e9, // chalk white, a touch green from the grass under it (pure white glows next to the photo)
     roughness: 1,
     metalness: 0,
     envMapIntensity: 0.6,
