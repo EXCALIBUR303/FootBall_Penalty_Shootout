@@ -1,6 +1,6 @@
 # Phase 0 — Research & Plan
 
-Status: **awaiting approval**. No code has been written.
+Status: **historical Phase 0 research**. The game and subsequent night-league overhaul are implemented. This document preserves the original research and its uncertainties; current architecture, approved exceptions and verification live in [VISUAL-OVERHAUL.md](VISUAL-OVERHAUL.md) and [../DECISIONS.md](../DECISIONS.md).
 
 Legend: ✅ confirmed via search · ⚠️ needs verification in Phase 1 (could not open the page from this environment) · ❌ gap
 

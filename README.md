@@ -2,11 +2,18 @@
 
 A 3D football penalty shootout for desktop browsers (developed and tested in Chromium), built with Vite and Three.js. Take five penalties each against an AI goalkeeper (then sudden death), or play a friend on the same keyboard.
 
+![Meridian Arena at night](docs/screenshots/night-menu.jpg)
+
+![Penalty view](docs/screenshots/night-match.jpg)
+
+The **night league overhaul** replaces the photographic stadium with an original Draco-compressed 3D arena. See [before / after](docs/visual-overhaul.jpg), [visual and QA notes](docs/VISUAL-OVERHAUL.md), and the reversible choices in [DECISIONS.md](DECISIONS.md).
+
 ## Run it
 
 ```bash
 npm install
 npm run dev        # http://localhost:5173
+npm run assets:stadium # reproducibly rebuild public/assets/models/stadium.glb (offline)
 npm run build      # production build in dist/
 npm run preview    # serve the build
 npm test           # unit tests (rules, shot solver, Rapier physics, replay recorder)
@@ -34,13 +41,15 @@ Needs a current browser with WebGL 2. Developed and tested in Chromium; Safari 1
 
 ## Features
 
-- Imported GLB models only for the ball, goal and players. The stadium is one CC0 panorama used twice: a sharp 4K tonemapped photo projected onto a grounded dome (what you see) and its HDR (what lights the scene). Painted pitch markings to Laws of the Game sizes; team kits painted onto the shared character in a shader.
+- Original 3D Meridian Arena: four-sided tiered stands, canopy roofs, four floodlight towers, light haze/glare, open tunnel, covered dugouts, corner flags, animated fictional LED sponsors and supporter banners. Full 68 × 105 m striped pitch with sharp line markings; a second imported goal completes the far end. No photographic background, real sponsors or crests.
+- 9,600 instanced supporters on High; 2,400 spread over every stand on Low. GPU bob/wave/jump reactions and sparse camera flashes. Low retains the entire stadium.
+- Imported CC0 ball, goal and Quaternius UAL characters. The match ball retains its source mesh with original ivory/navy panel paint; no photographic markings remain. Fictional patterned kits with names/numbers, captain band, socks/shin-pad seams, boots and gloves; painted eyes, brows, mouths, hair and two skin tones. The source Base Characters pack is absent, so the segmented mannequin silhouette remains a known limitation.
 - Rapier physics with CCD ball, post/bar/net colliders, plus hand-written drag and Magnus (spin) forces. A shot solver aims the ball so the *predicted* line crossing hits your target; power overshoot and wobble are applied afterwards.
 - Keeper dive, block and jump animations authored as keyframes (the library rig has none) and a keeper AI with per-difficulty reaction time, read error, guessing and reach.
-- Cinematic cameras (aim, run-up, follow, reaction, keeper view, two replay angles) driven by damped springs; hard cuts under reduced motion.
-- Goal and save effects (confetti, sparks, ball trail, slow motion), light bloom, auto replay at 0.6× speed.
+- Cinematic cameras (aim, run-up, follow, reaction, keeper view, replay angles) driven by damped springs; hard cuts under reduced motion. Portrait projection keeps both posts, the striker and ball in view and clears the power panel.
+- Goal and save effects: transparent curved streamer sprites, pooled sparks, interpolated ball trail, grass divots and a damped ripple on the imported net panels. Cool rim light, warm key, subtle floodlight bloom and automatic replay at 0.6× speed.
 - Audio: CC0 impact and UI samples plus a synthesised crowd, cheers, groans and whistle.
-- HTML/CSS interface over the canvas: menu, setup, HUD with round dots, pause, settings, help, end screen; keyboard and touch support, visible focus, dialogs trap focus, WCAG AA contrast.
+- Ice/gold broadcast HTML/CSS over a live 3D menu: kit previews, named player intro lower-thirds, scoreboard with round dots, GOAL / SAVED / MISSED banners, labelled power/curve meters and a match-end scorecard. Keyboard and touch controls, visible focus, focus-trapped dialogs and reduced motion are retained. Reduced motion also freezes crowd/LED/banner motion and disables flashes, particles and net ripple.
 - Performance: 60 fps target, resize and devicePixelRatio handling, resource disposal, Low quality mode, automatic downgrade when frames run slow.
 
 ## Stack
@@ -48,7 +57,7 @@ Needs a current browser with WebGL 2. Developed and tested in Chromium; Safari 1
 | | |
 |---|---|
 | Build | Vite 8, vanilla JavaScript (ES modules) |
-| 3D | three 0.186 (GLTFLoader + DRACOLoader, HDRLoader, GroundedSkybox, EffectComposer bloom, Neutral tone mapping (ACES via `?tm=aces` in dev), sRGB) |
+| 3D | three 0.186 (GLTFLoader + DRACOLoader, GPU instancing, EffectComposer bloom, ACES tone mapping, sRGB) |
 | Physics | `@dimforge/rapier3d-compat` |
 | Asset tooling | `@gltf-transform/*` (dedupe, prune, resample, WebP textures, Draco) |
 | Tests | `node:test`; Playwright is used for QA scripts but is **not** a project dependency |
@@ -69,7 +78,7 @@ src/
   core/              renderer, post-processing, quality presets, settings, perf, disposal
   ui/                screens/dialogs, HUD, toast
   styles/            tokens (palette, type scale), base, ui, hud, loading
-public/assets/       models/, hdri/ (backdrop JPG + lighting HDR), audio/
+public/assets/       models/ (including generated stadium.glb), audio/
 scripts/             asset pipeline and QA scripts (below)
 tests/               unit tests
 docs/PLAN.md         the Phase 0 research and plan
@@ -80,8 +89,8 @@ docs/PLAN.md         the Phase 0 research and plan
 All loaded files are listed in `src/assets/manifest.js`; nothing else refers to file names.
 
 1. Put the source GLB in `assets/raw/` (git-ignored) and run `npm run assets`. It optimises with Draco and WebP into `public/assets/models/`.
-2. To **replace the goal**: save the new model as `assets/raw/goal/goal.glb`, run `npm run assets`. It is scaled to the 7.56 m outer width and slid back so the front of the posts sits on the goal line (z = 0). It must open towards +z (net towards -z); rotate it in `src/world/scene.js` otherwise. The physics goal (`GOAL` in `src/game/shot.js`: posts, bar, net depth 1.5 m) should match the model. The shipped goal came from a Blender file via `scripts/convert-goal-blend.py`. An optional `stadium.glb` works the same way.
-3. To **replace the ball or character**, overwrite `ball.glb` / `character.glb`. The character must be a skinned humanoid with the Quaternius UAL bone names; the dive, block, jump and kick clips are authored per bone in `src/actors/clips.js` and mapped by `src/actors/pose.js`.
+2. To **replace the goal**: save the new model as `assets/raw/goal/goal.glb`, run `npm run assets`. It is scaled to the 7.56 m outer width and slid back so the front of the posts sits on the goal line (z = 0). It must open towards +z (net towards -z); rotate it in `src/world/scene.js` otherwise. The physics goal (`GOAL` in `src/game/shot.js`: posts, bar, net depth 1.5 m) should match the model. The shipped goal came from a Blender file via `scripts/convert-goal-blend.py`. The required authored stadium is rebuilt with `npm run assets:stadium`; its meshes are already in pitch coordinates. See docs/VISUAL-OVERHAUL.md before replacing it (crowd/ribbon/banner names are runtime hooks).
+3. To **replace the ball or character**, overwrite `ball.glb` / `character.glb`. The character must be a skinned humanoid with the Quaternius UAL bone names; kit painting assumes the shipped 1.83 m bind pose, so adjust `kit.js` for a different mesh. The ball receives original panel paint in `src/world/ball-style.js`. The dive, block, jump and kick clips are authored per bone in `src/actors/clips.js` and mapped by `src/actors/pose.js`.
 4. Target real-world sizes live in `TARGET_SIZE` in the manifest.
 
 Keep each model under about 5 MB.
@@ -96,8 +105,18 @@ Keep each model under about 5 MB.
 | `?timescale=4` | fast-forward the simulation (dev server only) |
 | `?pose=low&side=1&t=0.4` | freeze a keeper/striker pose for inspection (dev server only) |
 
-QA scripts (need the dev server running and a global Playwright: `NODE_PATH=$(npm root -g) CHROMIUM_PATH=/opt/pw-browsers/chromium node scripts/<name>.mjs`):
-`smoke-test` (loader and scene), `play-test` (a full shootout), `ui-tour` (every screen, keyboard only), `responsive-shots` (tablet/phone and touch), `audio-test`, `leak-test` (GPU resources across matches), `balance` (AI save rates).
+QA scripts (need the dev server running and Playwright available in the execution environment: `CHROMIUM_PATH=/usr/bin/chromium node scripts/<name>.mjs`; see the exact commands and optional global `NODE_PATH` setup in `docs/VISUAL-OVERHAUL.md`):
+`visual-qa` (full visual walkthrough), `layout-check` (nine desktop, tablet, phone and landscape viewports), `overhaul-check` (crowd density, assets, motion, animation bindings and net impact), `perf-measure` (software frame cost), `smoke-test` (loader and scene; use the normal game URL when Khronos test models are absent), `play-test` (a full shootout), `ui-tour` (every screen, keyboard only), `responsive-shots` (tablet/phone and touch), `audio-test`, `leak-test` (GPU resources across matches), `balance` (AI save rates).
+
+## Screenshots and verification
+
+![Fictional kit selection](docs/screenshots/kit-select.jpg)
+
+![Goal replay](docs/screenshots/night-replay.jpg)
+
+![Match-end scorecard](docs/screenshots/match-end.jpg)
+
+Screenshots are actual Chromium software-rendered captures. They differ from a real GPU, especially bloom and frame rate. The 60 fps hardware target requires a real GPU measurement; see [the QA record and exact commands](docs/VISUAL-OVERHAUL.md).
 
 ## Credits
 

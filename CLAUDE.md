@@ -69,16 +69,19 @@ what was tested, decisions needed).
 
 - Commands: `npm run dev`, `npm run build`, `npm run assets` (optimise assets/raw -> public/assets/models),
   `npm run assets:test` (adds the Khronos smoke-test models). Test via `/?test=1`.
-- Smoke test: `NODE_PATH=$(npm root -g) CHROMIUM_PATH=/opt/pw-browsers/chromium node scripts/smoke-test.mjs`
+- Smoke test: `CHROMIUM_PATH=/usr/bin/chromium node scripts/smoke-test.mjs http://localhost:5173/`
   (Playwright is preinstalled globally; it is not a project dependency.)
 - Pitch space: goal line z=0, goal faces +z, penalty spot z=11, y up (see src/assets/manifest.js).
 - Approved decisions: Rapier, vanilla JS, no Sketchfab/Freesound, keyframed missing clips, Kenney Fonts,
   textured pitch plane only if the stadium has none.
 
-- Phase 1 status: HDRI (also used as pitch + stands via GroundedSkybox), ball, and one shared Quaternius
-  character (cloned + kit-painted for keeper/striker) are in. GOAL is in (CC0 soccerGoal from OpenGameArt, converted with scripts/convert-goal-blend.py); STADIUM GLB is still missing
-  (HDRI covers it): Poly Pizza is behind Cloudflare, Sketchfab downloads need login. Drop them in assets/raw/, run `npm run assets`, and add
-  the files to src/assets/manifest.js (ids `goal`, `stadium` already listed).
+- Historical Phase 1 used a photographed stadium fallback. Current shipping scene uses the original
+  `public/assets/models/stadium.glb` built offline by `npm run assets:stadium`. Goal, ball and character
+  remain imported CC0 assets. Photo/HDR payloads have been removed.
+- User-approved stadium-authoring exception: `scripts/build-stadium.mjs` may author the stadium,
+  pitch, spectator prototype and stadium props offline with the installed tooling. The resulting GLB
+  remains Draco-compressed and under 5 MB; no new runtime dependencies. This does not authorize
+  replacing the ball, goal or players with runtime primitives. Ball/kit surface styling retains imported meshes.
 - Quaternius UAL has NO dive/parry/kick clips: authored in src/actors/clips.js (character-space angles,
   converted per bone by src/actors/pose.js). Preview with `/?pose=low&side=1&t=0.42` (dev only).
 - Phase 2 dev tools: `/?debug` draws Rapier colliders; `/?timescale=4` fast-forwards (dev only);
@@ -93,13 +96,19 @@ what was tested, decisions needed).
   (phase `replay`, setting `autoReplay`). Perf = src/core/perf.js: `?stats` overlay, auto-downgrade to Low when
   slow (skipped under automation), scripts/leak-test.mjs checks GPU resources stay flat across matches.
   Software GL (swiftshader) runs ~2 fps on High / ~5 fps on Low, so test scripts never judge FPS, only relative cost.
-- Visual overhaul (after Phase 5): stadium = src/world/environment.js (4K tonemapped JPG backdrop with exact
-  per-pixel projection, dome centred near the spot, 1K HDR for lighting, Neutral tone mapping); pitch lines =
-  src/world/pitch.js; kits = src/world/kit.js (shader regions by bone + bind-pose height; kits in teams.js).
+- Night league visual overhaul: `src/world/environment.js` supplies explicit cool/warm night lights,
+  animated canvas LED boards, supporter flags and glare; `src/world/crowd.js` uses one instanced draw
+  (9,600 High / 2,400 Low, balanced across all stands). Stadium builder must preserve both UVs and
+  indices on runtime-textured meshes. Low never removes the stadium. ACES + restrained High bloom.
+  `assets/raw/characters/` was absent: existing UAL rig and clips are retained, with painted faces/hair,
+  names/numbers and fictional kits. `src/world/ball-style.js` paints the imported ball without photo marks.
+  `src/fx/net.js` deforms the imported net on actual impact, including during the result phase.
+  UI finish is `broadcast.css`; architecture, sizes, screenshots and exact QA commands are in
+  `docs/VISUAL-OVERHAUL.md`, `docs/ASSET-SIZES.md` and `DECISIONS.md`.
   Camera springs are exact (director.js) — never go back to Euler steps (they exploded at low fps).
-  UI = tokens.css design system, ui.js screens, hud.js broadcast HUD. Visual QA: scripts/visual-qa.mjs
-  <outDir> [w h quality] (PORT env for a second dev server); docs/qa/ is git-ignored; before/after sheet in
-  docs/visual-overhaul.jpg. Layout: scripts/layout-check.mjs (7 viewports). Relative frame cost:
-  scripts/perf-measure.mjs (backdrop anisotropy is the biggest cost knob; it follows the quality preset).
+  Visual QA: scripts/visual-qa.mjs <outDir> [w h quality]; responsive-shots uses real touch events.
+  Layout check includes short landscape windows; overhaul-check verifies assets, bindings, density,
+  motion and net impact. Routine functional checks can skip software drawing; leak/perf/visual checks
+  always render. SwiftShader frame times cannot certify the 60 fps real-GPU target.
 - Phase 0 plan lives in `docs/PLAN.md`.
 - Git branch for development: `claude/3d-football-penalty-shootout-q6sult`.
