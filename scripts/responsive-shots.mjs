@@ -5,7 +5,8 @@ const { chromium } = createRequire(import.meta.url)('playwright');
 const out = process.argv[2] || 'docs/qa/responsive';
 mkdirSync(out,{recursive:true});
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH, args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });
-for (const [w, h, touch] of [[1024, 768, true], [768, 1024, true], [390, 844, true]]) {
+const views=process.env.VIEWPORTS?process.env.VIEWPORTS.split(',').map(v=>[...v.split('x').map(Number),true]):[[1024,768,true],[768,1024,true],[390,844,true]];
+for (const [w, h, touch] of views) {
   const page = await browser.newPage({ viewport: { width: w, height: h }, hasTouch: touch, isMobile: w < 500 });
   page.setDefaultTimeout(120000);
   await page.addInitScript(q=>localStorage.setItem('penalty-kings.settings',JSON.stringify({quality:q,onboarded:true})),process.env.QUALITY || 'low');
@@ -26,6 +27,7 @@ for (const [w, h, touch] of [[1024, 768, true], [768, 1024, true], [390, 844, tr
   await page.screenshot({ path: `${out}/${w}x${h}-hud.png` });
   await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
   await page.waitForFunction(()=>window.__game.game.phase==='curve');
+  await page.waitForFunction(()=>document.querySelector('.hints').textContent.includes('Tap'));
   await cdp.detach();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth);
   console.log(`${w}x${h}`, 'phase', await page.evaluate(() => window.__game.game.phase), 'horizontal overflow', overflow);

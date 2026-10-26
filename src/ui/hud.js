@@ -9,6 +9,7 @@ import { shirtIcon } from './kit-icon.js';
  * @param {{ home: {name, short, color, kit}, away: {name, short, color, kit} }} teams
  */
 export function createHud({ home, away }, root = document.getElementById('ui')) {
+  const touchControls=navigator.maxTouchPoints>0;
   const el = document.createElement('div');
   el.className = 'hud';
   el.style.setProperty('--home', home.color);
@@ -139,9 +140,9 @@ export function createHud({ home, away }, root = document.getElementById('ui')) 
       coach.dataset.step = step ?? '';
       if (!step) return;
       const copy = {
-        aim: ['1/3', 'Aim — move the mouse or use the arrow keys'],
-        power: ['2/3', 'Hold Space, release to set power. The red end skies it.'],
-        curve: ['3/3', 'Press Space again to lock the curve'],
+        aim: ['1/3', touchControls?'Drag or use arrow keys to aim':'Aim — move the mouse or use the arrow keys'],
+        power: ['2/3', touchControls?'Press and hold, release to set power. The red end skies it.':'Hold Space, release to set power. The red end skies it.'],
+        curve: ['3/3', touchControls?'Tap or press Space to lock the curve':'Press Space again to lock the curve'],
       }[step];
       $('.coach__step').textContent = copy[0];
       $('.coach__text').textContent = copy[1];

@@ -133,3 +133,15 @@ Each entry records the decision, alternatives, reason, and reversal. No web cont
 - Alternatives: claim 60 fps from software timings; hide the slow software results; change physics throughput to make a benchmark look fast.
 - Why: the current environment provides software-rendered evidence, not a verified normal-GPU acceptance result. The exact hardware command makes the remaining check concrete without pretending it has passed.
 - Reverse: remove the optional headed path and device-report fields in perf-measure.mjs.
+
+## 23. Touch-appropriate control copy
+- Decision: touch-capable devices show drag/hold/tap guidance and tap-or-Space curve/replay hints; onboarding includes the same touch instructions. Keyboard shortcuts remain available on hybrid devices.
+- Alternatives: show Space/mouse-only hints on phones; remove keyboard guidance completely on touch devices.
+- Why: the corrected portrait capture made the remaining desktop-only copy obvious. This is a copy-only input-modality adaptation, with no new listeners, gameplay changes or resource allocations. Responsive QA now checks the Tap hint after a real held touch transitions to curve.
+- Reverse: restore the previous hint/coach strings in match.js and hud.js; control behavior is unchanged.
+
+## 24. Documentation capture handling
+- Decision: publish actual Chromium screenshots as JPEGs and assemble a labelled before/after contact sheet without retouching the game imagery. Keep font-renderer caches for the sheet inside ignored work/font-cache.
+- Alternatives: ship multi-megabyte PNGs for every capture; generate illustrative images; allow tooling caches outside the project.
+- Why: keeps documentation compact and truthful, and respects the folder boundary. Fontconfig initially reported unwritable system cache locations; a process-local project cache resolves this without permission escalation.
+- Reverse: regenerate the original PNGs using the documented QA commands; remove the JPEG/contact-sheet outputs and publish script if preferred.

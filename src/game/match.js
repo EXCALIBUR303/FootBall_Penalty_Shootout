@@ -41,6 +41,7 @@ export async function createMatch({ world, canvas, params, options = {}, setting
   const mode = options.mode ?? '1p';
   const level = DIFFICULTY[options.difficulty] ? options.difficulty : DIFFICULTY[params.get('difficulty')] ? params.get('difficulty') : 'normal';
   const ai = DIFFICULTY[level];
+  const touchControls=typeof navigator!=='undefined' && navigator.maxTouchPoints>0;
   const teams = { home: options.home ?? TEAMS[0], away: options.away ?? TEAMS[1] };
   const get = (k, fallback) => settings?.get(k) ?? fallback;
 
@@ -280,14 +281,14 @@ export async function createMatch({ world, canvas, params, options = {}, setting
   // --- Prompts / onboarding -------------------------------------------------------------------
   /** Contextual controls for the current phase (key caps + verb), instead of instruction sentences. */
   function refreshPrompt() {
-    if (phase === 'replay') return hud.hints([['Space', 'Skip replay']]); // always shown: it is the only control
+    if (phase === 'replay') return hud.hints([[touchControls?'Tap / Space':'Space', 'Skip replay']]); // always shown: it is the only control
     if (!get('hints', true)) return hud.hints([]);
     const keeper2p = [['A / D', 'Low dive'], ['Q / E', 'High dive'], ['S', 'Block'], ['W', 'Jump']];
     const items = {
-      aim: [[mode === '2p' ? '← → ↑ ↓' : 'Mouse / ←→↑↓', 'Aim'], ['Hold Space', 'Power'], ...(mode === '2p' ? keeper2p : [])],
+      aim: [[touchControls?'Drag / arrows':mode === '2p' ? '← → ↑ ↓' : 'Mouse / ←→↑↓', 'Aim'], [touchControls?'Hold':'Hold Space', 'Power'], ...(mode === '2p' ? keeper2p : [])],
       power: [['Release', 'Lock power']],
-      curve: [['Space', 'Lock curve']],
-      keeper: [['Click', 'Dive there'], ['← / →', 'Low dive'], ['Q / E', 'High dive'], ['↓', 'Block'], ['↑', 'Jump']],
+      curve: [[touchControls?'Tap / Space':'Space', 'Lock curve']],
+      keeper: [[touchControls?'Tap / click':'Click', 'Dive there'], ['← / →', 'Low dive'], ['Q / E', 'High dive'], ['↓', 'Block'], ['↑', 'Jump']],
     }[phase] ?? [];
     hud.hints(items);
   }
