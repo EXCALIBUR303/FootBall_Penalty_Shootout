@@ -48,7 +48,7 @@ export function buildEnvironment(renderer, scene, assets) {
     const sprite=new T.Sprite(new T.SpriteMaterial({map:glow,color:'#acd9ff',transparent:true,opacity:0.65,depthWrite:false,blending:T.AdditiveBlending}));sprite.position.copy(top);sprite.scale.set(13,13,1);effects.add(sprite);
   }
   let t=0;
-  const api={sky:null,crowd,quality(){crowd.quality(preset().name==='low');grass.anisotropy=Math.min(preset().anisotropy,renderer.capabilities.getMaxAnisotropy());led.anisotropy=Math.min(preset().anisotropy,renderer.capabilities.getMaxAnisotropy());},
+  const api={sky:null,crowd,quality(){crowd.quality(preset().name==='low');grass.anisotropy=Math.min(preset().anisotropy,renderer.capabilities.getMaxAnisotropy());led.anisotropy=Math.min(preset().anisotropy,renderer.capabilities.getMaxAnisotropy());grass.needsUpdate=true;led.needsUpdate=true;},
     update(dt,reduced){bannerMotion.value=reduced?0:1;if(!reduced)bannerTime.value+=dt;crowd.update(dt,reduced);if(!reduced){t+=dt;led.offset.x=t*0.018;}},dispose(){led.dispose();glow.dispose();grass.dispose();}};
   api.quality(); return api;
 }

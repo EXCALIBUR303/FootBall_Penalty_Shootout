@@ -2,13 +2,14 @@
 import * as T from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { Document, NodeIO } from '@gltf-transform/core';
-import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
+import { ALL_EXTENSIONS, KHRMaterialsEmissiveStrength } from '@gltf-transform/extensions';
 import { dedup, prune, draco } from '@gltf-transform/functions';
 import draco3d from 'draco3dgltf';
 import { mkdir, stat } from 'node:fs/promises';
 
 const doc = new Document(), scene = doc.createScene('Meridian Arena'), buffer = doc.createBuffer();
 const groups = new Map();
+const emission=doc.createExtension(KHRMaterialsEmissiveStrength);
 const palette = {
   concrete: '#182538', tread: '#25364b', roof: '#0d1829', steel: '#435b72', trim: '#51c6ed',
   turfA: '#276d39', turfB: '#216033', apron: '#122c2a', seatBlue: '#214b81', seatRed: '#71303e',
@@ -92,7 +93,11 @@ for(const [i,x] of [-28,-17,17,28].entries()) {
 }
 // Crowd prototype ships as part of the authored asset; renderer instantiates its geometry.
 const person = mergeGeometries([
-  new T.BoxGeometry(0.42,0.6,0.25).translate(0,0.4,0).toNonIndexed(),
+  new T.CylinderGeometry(0.24,0.19,0.56,6).translate(0,0.42,0).toNonIndexed(),
+  new T.BoxGeometry(0.12,0.45,0.18).rotateZ(0.16).translate(-0.28,0.4,0).toNonIndexed(),
+  new T.BoxGeometry(0.12,0.45,0.18).rotateZ(-0.16).translate(0.28,0.4,0).toNonIndexed(),
+  new T.BoxGeometry(0.14,0.22,0.2).translate(-0.12,0.11,0).toNonIndexed(),
+  new T.BoxGeometry(0.14,0.22,0.2).translate(0.12,0.11,0).toNonIndexed(),
   new T.IcosahedronGeometry(0.19,0).translate(0,0.88,0).toNonIndexed(),
 ]);
 emit('CROWD_TEMPLATE',person,'white'); person.dispose();
@@ -103,10 +108,11 @@ function emit(name,g,key) {
   if(g.getAttribute('uv')) p.setAttribute('TEXCOORD_0',a('TEXCOORD_0','uv','VEC2'));
   const c=new T.Color(palette[key]||'#e9f4ff');
   const m=doc.createMaterial(key).setBaseColorFactor([c.r,c.g,c.b,1]).setRoughnessFactor(0.85).setMetallicFactor(0).setDoubleSided(name.startsWith('BANNER_'));
-  if(key==='lamp'||key==='trim') m.setEmissiveFactor(key==='lamp'?[4,4.5,5]:[0.12,0.48,0.7]);
+  if(key==='lamp')m.setEmissiveFactor([0.8,0.9,1]).setExtension('KHR_materials_emissive_strength',emission.createEmissiveStrength().setEmissiveStrength(5));
+  if(key==='trim')m.setEmissiveFactor([0.12,0.48,0.7]);
   p.setMaterial(m); scene.addChild(doc.createNode(name).setMesh(doc.createMesh(name).addPrimitive(p)));
 }
-await doc.transform(dedup(),prune(),draco({method:'edgebreaker'}));
+await doc.transform(dedup(),prune({keepAttributes:true}),draco({method:'edgebreaker'}));
 const io=new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({'draco3d.encoder':await draco3d.createEncoderModule()});
 await mkdir('public/assets/models',{recursive:true});
 await io.write('public/assets/models/stadium.glb',doc);

@@ -11,6 +11,7 @@ import { Striker } from '../actors/striker.js';
 import { buildEnvironment } from './environment.js';
 import { addPitchMarkings } from './pitch.js';
 import { applyKit } from './kit.js';
+import { styleBall } from './ball-style.js';
 import { createNetRipple } from '../fx/net.js';
 import { TEAMS, KEEPER_KIT } from '../game/teams.js';
 
@@ -67,6 +68,7 @@ export function buildScene(renderer, assets) {
     const fitted = fitModel(assets.ball.scene, 'diameter', TARGET_SIZE.ballDiameter);
     fitted.position.y = -PITCH.ballRadius;
     enableShadows(fitted);
+    styleBall(fitted);
     ball = new THREE.Group();
     ball.name = 'ball';
     ball.add(fitted);

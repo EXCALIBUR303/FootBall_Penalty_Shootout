@@ -43,3 +43,33 @@ Each entry records the decision, alternatives, reason, and reversal. No web cont
 - Alternatives: darken the previous menu without composition changes; add real crests or sponsors; move gameplay cameras into stands.
 - Why: a cohesive identity must span the scene and interface. Initial screenshots exposed a clipped wordmark on short windows, so a compact landscape layout is included. All controls remain native keyboard/touch elements.
 - Reverse: revert broadcast.css and UI/camera changes. Team definitions stay fictional and can be restored independently.
+
+## 8. Verification scope and net event ordering
+- Decision: keep unit/physics/animation behavior intact and run the existing browser scripts using system Chromium. Initialize Low before compiling shaders for routine software-rendered QA, extend startup/capture timeouts, and exercise genuine CDP touch start/hold/end in responsive captures. Layout-only checks use an explicit end-screen fixture rather than repeat a whole match per viewport; full-match tests still run independently. Add an overhaul-specific integration check for crowd density, no photo/HDR loads, skeleton track bindings, reduced-motion ribbon freeze and a real shot hitting the net.
+- Alternatives: suppress slow tests; add Playwright as a dependency; change game speed/physics globally; fake end-of-game results in the full-match tests.
+- Why: verifies the requested behaviors while keeping the suite practical on software rendering. A goal is detected before the ball reaches the net collider, so net events now remain active during the result phase. Far goal is a clone of the existing imported asset.
+- Reverse: revert the QA script changes and net-event ordering hunk; remove overhaul-check.mjs. Source physics and animation data are untouched.
+
+## 9. Remove obsolete daylight payloads
+- Decision: remove the unused backdrop JPG and lighting HDR from public assets; add the stadium rebuild command without changing dependencies.
+- Alternatives: keep unused HDR/JPG files shipped in dist; retain a daytime HDR for reflections.
+- Why: explicit night lighting already provides consistent illumination and rim light, and unused images waste download/storage budget and preserve real advertising unnecessarily.
+- Reverse: restore public/assets/hdri from the supplied source commit and re-enable the old manifest/environment implementation.
+
+## 10. Preserve runtime texture coordinates and valid emission
+- Decision: preserve unused vertex attributes during GLB pruning because runtime LED, turf and flag textures need their UVs. Use glTF’s emissive-strength extension for bright lamps, keeping emissive factors within the glTF range. Give the authored spectator prototype a tapered torso, arms and short legs.
+- Alternatives: disable pruning entirely; ship untextured ribbons; rebuild UVs at runtime; retain out-of-range emissive factors.
+- Why: visual QA revealed colour-only ad strips; the runtime-assigned textures had lost UVs during asset optimization. Integration checks now assert those UVs are present. The more readable spectator silhouette still uses one instanced draw and stays within the small GLB budget.
+- Reverse: revert this builder change and regenerate the previous asset; remove the UV assertions only if runtime texture hooks are removed too.
+
+## 11. Unbranded match ball
+- Decision: retain the imported Poly Haven ball geometry and replace its scuffed photographic surface with original ivory/navy polygon-panel paint and fine warm seams. Remove the unused photo maps from the shipping GLB with scripts/style-ball.mjs.
+- Alternatives: keep the visibly dirty photo ball; create a procedural replacement sphere; download a branded match ball.
+- Why: texture inspection found worn printed markings, and the grey ball read like a stone against the stylized arena. Original surface paint shares the night palette, removes brand ambiguity and reduces the asset payload. Geometry, physics radius and replay transforms are unchanged.
+- Reverse: restore public/assets/models/ball.glb from the supplied commit; remove the styleBall call/module. To reproduce from the exact original mesh, export that Git blob inside work/ and pass its path to scripts/style-ball.mjs.
+
+## 12. Preserve the actual penalty mark
+- Decision: retain the regulation-sized white penalty spot under the ball after close-up inspection.
+- Alternatives: hide the spot to remove the white oval seen in extreme ball close-ups; add a replacement shadow decal.
+- Why: the oval is the painted 0.22 m penalty mark, not a ball mesh or shadow artifact. It is correct pitch information and reads properly at the gameplay camera distance.
+- Reverse: change MARKINGS.spot.radius in src/world/pitch.js if a different artistic size is preferred.
