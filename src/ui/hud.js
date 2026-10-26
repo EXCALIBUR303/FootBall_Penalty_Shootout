@@ -20,7 +20,7 @@ export function createHud({ home, away }, root = document.getElementById('ui')) 
         <span class="sb__ball" aria-hidden="true"></span>
       </div>`;
   el.innerHTML = /* html */ `
-    <header class="sb" aria-label="Scoreboard">
+    <header class="sb" aria-label="Scoreboard"><div class="sb__label"><span>PK / Night league</span><span>Penalty shootout</span></div>
       <div class="sb__main">
         ${teamBlock('home', home)}
         <div class="sb__score" aria-live="polite" aria-atomic="true">
@@ -35,17 +35,17 @@ export function createHud({ home, away }, root = document.getElementById('ui')) 
       </div>
     </header>
     <button class="hud__pause" data-action="pause" aria-label="Pause (Esc)"><span class="hud__pause-icon" aria-hidden="true"></span><span class="hud__pause-key" aria-hidden="true">Esc</span></button>
-    <div class="turn" data-turn aria-live="polite"><span class="turn__team" data-turn-team></span><span class="turn__text" data-turn-text></span></div>
+    <div class="turn" data-turn aria-live="polite"><span class="turn__number" data-turn-number>09</span><div class="turn__identity"><span class="turn__team" data-turn-team></span><span class="turn__text" data-turn-text></span><small data-turn-role></small></div></div>
     <div class="hud__reticle" hidden aria-hidden="true"><span></span></div>
     <div class="coach" hidden role="note"><span class="coach__step"></span><span class="coach__text"></span></div>
     <div class="meters" hidden>
       <div class="meter meter--power">
-        <div class="meter__head"><span>Power</span><b data-power>0%</b></div>
-        <div class="meter__track"><div class="meter__fill"></div><div class="meter__danger" aria-hidden="true"></div></div>
+        <div class="meter__head"><span>01 / Power</span><b data-power>0%</b></div>
+        <div class="meter__track" role="meter" aria-label="Shot power" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="meter__fill"></div><div class="meter__danger" aria-hidden="true"></div><span class="meter__sweet" aria-hidden="true"></span></div><small class="meter__note" data-meter-note>Release to lock · red zone risks a miss</small>
       </div>
       <div class="meter meter--curve">
-        <div class="meter__head"><span>Curve</span><b data-curve>Straight</b></div>
-        <div class="meter__track meter__track--curve"><div class="meter__centre"></div><div class="meter__mark"></div></div>
+        <div class="meter__head"><span>02 / Curve</span><b data-curve>Straight</b></div>
+        <div class="meter__track meter__track--curve" role="meter" aria-label="Shot curve" aria-valuemin="-100" aria-valuemax="100" aria-valuenow="0"><div class="meter__centre"></div><div class="meter__mark"></div></div>
       </div>
     </div>
     <div class="lt" data-lt role="status" aria-live="assertive"><div class="lt__body"><span class="lt__title" data-lt-title></span><span class="lt__sub" data-lt-sub></span></div></div>
@@ -88,13 +88,15 @@ export function createHud({ home, away }, root = document.getElementById('ui')) 
       r.classList.toggle('is-sudden', suddenDeath);
     },
     /** Short banner at the start of each kick: team name + what you are doing. */
-    turn(text, team, teamName = '') {
+    turn(text, team, teamName = '', keeper = false) {
+      $('[data-turn-number]').textContent=keeper?'01':'09';
+      $('[data-turn-role]').textContent=text;
       $('[data-turn-team]').textContent = teamName;
-      $('[data-turn-text]').textContent = text;
+      $('[data-turn-text]').textContent = keeper?'J. Rook':'A. Vale';
       turn.dataset.team = team;
       turn.classList.remove('is-shown'); void turn.offsetWidth; turn.classList.add('is-shown');
       clearTimeout(turnTimer);
-      turnTimer = setTimeout(() => turn.classList.remove('is-shown'), 1700);
+      turnTimer = setTimeout(() => turn.classList.remove('is-shown'), 2600);
     },
     /**
      * Contextual controls for the current phase. items: [[keys, label], …] where keys is a string such as
@@ -123,6 +125,9 @@ export function createHud({ home, away }, root = document.getElementById('ui')) 
       meters.classList.toggle('is-over', power > 0.92);
       curveMark.style.left = `${50 + curve * 50}%`;
       meters.classList.toggle('is-curve', curveActive);
+      $('[data-meter-note]').textContent=curveActive?'Press to lock curve · centre = straight':power>0.92?'Too much power · release carefully':'Release to lock · red zone risks a miss';
+      $('.meter--power [role="meter"]').setAttribute('aria-valuenow',Math.round(power*100));
+      $('.meter--curve [role="meter"]').setAttribute('aria-valuenow',Math.round(curve*100));
       $('[data-power]').textContent = `${Math.round(power * 100)}%`;
       const c = Math.round(Math.abs(curve) * 100);
       $('[data-curve]').textContent = c < 5 ? 'Straight' : `${curve < 0 ? '← Left' : 'Right →'} ${c}`;

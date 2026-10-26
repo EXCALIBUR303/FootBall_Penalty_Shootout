@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "assets": "node scripts/optimize-assets.mjs",
     "assets:test": "node scripts/optimize-assets.mjs --test",
-    "test": "node --test \"tests/*.test.js\""
+    "test": "node --test \"tests/*.test.js\"",
+    "assets:stadium": "node scripts/build-stadium.mjs"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.21.0",

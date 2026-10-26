@@ -147,7 +147,7 @@ export function createUI(handlers, root = document.getElementById('ui')) {
     for (const side of ['home', 'away']) {
       const t = team(picks[side]);
       $(`[data-pick="${side}"]`).textContent = t.name;
-      $(`[data-badge="${side}"]`).innerHTML = shirtIcon(t.kit, { size: 96 });
+      $(`[data-badge="${side}"]`).innerHTML = shirtIcon(t.kit, { size: 120 });
       $(`.team-card[data-side="${side}"]`).style.setProperty('--team', t.color);
     }
   }
@@ -210,7 +210,7 @@ export function createUI(handlers, root = document.getElementById('ui')) {
       const title = $('[data-end-title]');
       title.textContent = `${w.name} win`;
       title.style.setProperty('--team', w.color);
-      $('[data-end-badge]').innerHTML = shirtIcon(w.kit, { size: 64 });
+      $('[data-end-badge]').innerHTML = shirtIcon(w.kit, { size: 80 });
       $('[data-end-score]').innerHTML = `<span>${score.home}</span><span class="end__dash">–</span><span>${score.away}</span>`;
       for (const side of ['home', 'away']) {
         const t = side === 'home' ? home : away;
@@ -236,9 +236,10 @@ const DIFFICULTIES = [
 
 const TEMPLATE = /* html */ `
 <section class="screen screen--menu" data-screen="menu" hidden aria-labelledby="menu-title">
+  <div class="arena-id" aria-label="Meridian Arena, night league"><span class="live-chip">Live from</span><strong>Meridian Arena</strong><small>Night league / Penalty shootout</small></div>
   <div class="menu">
     <h1 class="wordmark" id="menu-title" aria-label="Penalty Kings"><span class="wordmark__top">Penalty</span><span class="wordmark__main">Kings</span></h1>
-    <p class="menu__tag">Five kicks each. Then sudden death.</p>
+    <p class="menu__tag">Under the lights. For the crown.</p>
     <nav class="menu__nav" aria-label="Main menu">
       <button class="btn btn--primary btn--hero" data-action="play-1p" autofocus>
         <span class="btn__title">Play vs CPU</span><span class="btn__sub">Shoot, then save — against the computer</span>
@@ -256,7 +257,7 @@ const TEMPLATE = /* html */ `
     <header class="setup__head">
       <button type="button" class="btn btn--ghost btn--back" data-action="back" aria-label="Back to menu">‹ Back</button>
       <div class="setup__heading">
-        <p class="eyebrow">Match setup</p>
+        <p class="eyebrow">Night league / Match setup</p>
         <h2 class="setup__title" id="setup-title" data-setup-title>Play vs CPU</h2>
       </div>
     </header>
@@ -265,7 +266,7 @@ const TEMPLATE = /* html */ `
       ${['home', 'away'].map((side) => `
       <div class="team-card" data-side="${side}">
         <span class="team-card__label" id="${side}-label" data-${side}-label>${side === 'home' ? 'Your team' : 'Opponent'}</span>
-        <div class="team-card__badge" data-badge="${side}"></div>
+        <div class="team-card__badge" data-badge="${side}"></div><span class="team-card__kit-label">Match kit / No. 09</span>
         <div class="team-card__picker" role="group" aria-labelledby="${side}-label">
           <button type="button" class="btn btn--icon" data-action="pick" data-side="${side}" data-dir="-1" aria-label="Previous team">‹</button>
           <output class="team-card__name" data-pick="${side}" aria-live="polite"></output>

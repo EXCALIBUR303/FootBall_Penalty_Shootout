@@ -7,18 +7,23 @@ import * as THREE from 'three';
  */
 export function createEffects(scene, { low = false } = {}) {
   let isLow = low;
-  const confetti = new ParticleSystem(400, { size: 0.16, blending: THREE.NormalBlending, map: null });
+  let reduced = false;
+  let lastTrail = null;
+  const confetti = new ParticleSystem(400, { size: 0.28, blending: THREE.NormalBlending, map: streamer() });
   const sparks = new ParticleSystem(160, { size: 0.12, blending: THREE.AdditiveBlending, map: softDot() });
   // Ball trail: a ring buffer of recent positions that fade out.
   const TRAIL = 36;
   const trail = new ParticleSystem(TRAIL, { size: 0.09, blending: THREE.AdditiveBlending, map: softDot() });
-  scene.add(confetti.points, sparks.points, trail.points);
+  const divots=new ParticleSystem(40,{size:0.08,blending:THREE.NormalBlending,map:streamer()});
+  scene.add(confetti.points, sparks.points, trail.points, divots.points);
   const tmp = new THREE.Color();
 
   const api = {
     set low(v) { isLow = v; },
+    set reducedMotion(v) { reduced = v; if(v)api.clear(); },
     /** Goal: confetti fountain from the back of the net, in the scoring team's colours. */
     goal(color, x = 0) {
+      if(reduced)return;
       const n = isLow ? 90 : 300;
       const palette = [new THREE.Color(color), new THREE.Color(0xffc93c), new THREE.Color(0xffffff), new THREE.Color(0x44d6a4)];
       for (let i = 0; i < n; i++) {
@@ -34,6 +39,7 @@ export function createEffects(scene, { low = false } = {}) {
     },
     /** Impact sparks (post, bar, glove). `strength` ~ ball speed in m/s. */
     hit(pos, strength = 10, color = 0xfff1c2) {
+      if(reduced)return;
       tmp.set(color);
       const n = Math.round((isLow ? 6 : 16) * Math.min(1.5, 0.4 + strength / 20));
       for (let i = 0; i < n; i++) {
@@ -46,18 +52,25 @@ export function createEffects(scene, { low = false } = {}) {
       }
     },
     /** Call every frame while the ball is moving fast; `active` false lets the trail fade. */
-    trail(pos, speed, active) {
-      if (isLow) return;
-      if (active && speed > 8) {
-        const k = Math.min(1, (speed - 8) / 16);
-        trail.emit({ x: pos.x, y: pos.y, z: pos.z, vx: 0, vy: 0, vz: 0, r: 0.9 * k + 0.1, g: 0.95 * k + 0.1, b: 1, life: 0.35, gravity: 0, drag: 0 });
-      }
+    divot(pos) {
+      if(reduced)return;
+      for(let i=0;i<(isLow?5:14);i++)divots.emit({x:pos.x-0.15,y:0.04,z:pos.z,vx:(Math.random()-0.5)*2,vy:1+Math.random(),vz:1+Math.random()*2,r:0.12,g:0.32,b:0.08,life:0.6+Math.random()*0.6,gravity:5,drag:1});
     },
-    update(dt) { confetti.update(dt); sparks.update(dt); trail.update(dt); },
-    clear() { confetti.clear(); sparks.clear(); trail.clear(); },
+    trail(pos, speed, active) {
+      if (isLow || reduced || !active || speed<8) {lastTrail=null;return;}
+      if(!lastTrail)lastTrail=pos.clone();
+      const distance=lastTrail.distanceTo(pos), n=Math.min(18,Math.max(1,Math.ceil(distance/0.14)));
+      for(let i=0;i<n;i++){
+        const u=(i+1)/n;
+        trail.emit({x:lastTrail.x+(pos.x-lastTrail.x)*u,y:lastTrail.y+(pos.y-lastTrail.y)*u,z:lastTrail.z+(pos.z-lastTrail.z)*u,vx:0,vy:0,vz:0,r:0.5,g:0.8,b:1,life:0.17+u*0.12,gravity:0,drag:0});
+      }
+      lastTrail.copy(pos);
+    },
+    update(dt) { confetti.update(dt); sparks.update(dt); trail.update(dt); divots.update(dt); },
+    clear() { confetti.clear(); sparks.clear(); trail.clear(); divots.clear(); lastTrail=null; },
     dispose() {
-      scene.remove(confetti.points, sparks.points, trail.points);
-      for (const s of [confetti, sparks, trail]) s.dispose();
+      scene.remove(confetti.points, sparks.points, trail.points, divots.points);
+      for (const s of [confetti, sparks, trail, divots]) s.dispose();
     },
   };
   return api;
@@ -136,4 +149,11 @@ function softDot() {
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
+}
+
+/** Curved, tapered streamer sprite: transparent margins replace the old square points. */
+function streamer(){
+  const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d');
+  g.strokeStyle='white';g.lineWidth=9;g.lineCap='round';g.beginPath();g.moveTo(24,6);g.bezierCurveTo(52,16,10,40,38,58);g.stroke();
+  return new THREE.CanvasTexture(c);
 }

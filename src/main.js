@@ -158,7 +158,7 @@ async function boot() {
     menuT += settings.get('reducedMotion') ? 0 : dt;
     const a = 0.20 + Math.sin(menuT * 0.06) * 0.16;
     camera.position.set(Math.sin(a)*38, 5.5 + Math.sin(menuT*0.11)*0.2, 6+Math.cos(a)*38);
-    camera.lookAt(0, 5.0, -5);
+    camera.lookAt(0, 7.0, -5);
     if (camera.fov !== 48) { camera.fov = 48; camera.updateProjectionMatrix(); }
   }
 

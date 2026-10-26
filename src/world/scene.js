@@ -54,6 +54,9 @@ export function buildScene(renderer, assets) {
     enableShadows(goal);
     styleGoal(goal);
     scene.add(goal);
+    const farGoal=goal.clone(true);
+    farGoal.name='far-goal';farGoal.rotation.y=Math.PI;farGoal.position.z=105-goal.position.z;
+    enableShadows(farGoal,{cast:false,receive:true});scene.add(farGoal);
   }
 
   const net = createNetRipple(goal);

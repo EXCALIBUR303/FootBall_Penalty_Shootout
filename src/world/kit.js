@@ -47,6 +47,8 @@ export function applyKit(root, kit) {
     uTrim: { value: new THREE.Color() },
     uBoots: { value: new THREE.Color('#15181d') },
     uSkin: { value: SKIN.clone() },
+    uHair: { value: new THREE.Color('#241a19') },
+    uMark: { value: makeNameplate() },
     uGloves: { value: new THREE.Color() },
     uPattern: { value: 0 }, // 0 plain, 1 vertical stripes, 2 hoops, 3 sash
     uLongSleeves: { value: 0 },
@@ -70,8 +72,16 @@ export function applyKit(root, kit) {
 
   const handle = {
     uniforms,
+    dispose() {uniforms.uMark.value.dispose();},
     set(next) {
+      uniforms.uSkin.value.set(next.skin ?? (next.gloves ? '#865539' : '#bd8862'));
+      uniforms.uBoots.value.set(next.boots ?? '#e4a34a');
       uniforms.uShirt.value.set(next.shirt);
+      const c=uniforms.uMark.value.image, g=c.getContext('2d');
+      g.clearRect(0,0,c.width,c.height);g.fillStyle='#f4ead1';g.textAlign='center';
+      g.font='bold 40px system-ui';g.fillText(next.playerName ?? (next.gloves?'ROOK':'VALE'),128,70);
+      g.font='900 220px system-ui';g.fillText(next.gloves?'1':'9',128,300);
+      uniforms.uMark.value.needsUpdate=true;
       uniforms.uShirt2.value.set(next.shirt2 ?? next.trim ?? next.shirt);
       uniforms.uShorts.value.set(next.shorts);
       uniforms.uSocks.value.set(next.socks);
@@ -116,6 +126,8 @@ function makeKitMaterial(src, uniforms, regions, isJoint) {
       .replace('#include <common>', /* glsl */ `#include <common>
         uniform vec3 uShirt, uShirt2, uShorts, uSocks, uTrim, uBoots, uSkin, uGloves;
         uniform float uPattern, uLongSleeves, uGlovesOn, uJoint;
+        uniform vec3 uHair;
+        uniform sampler2D uMark;
         varying float vRegion;
         varying vec3 vBind;
         vec3 shirtColour(vec3 p) {
@@ -145,9 +157,35 @@ function makeKitMaterial(src, uniforms, regions, isJoint) {
         } else if (r == 3.0) {
           kit = uBoots;
         }
-        if (uJoint > 0.5) kit *= 0.82;                         // joint caps read as seams/shading
+        // Painted identity follows bind-pose positions, so every authored animation keeps it attached.
+        if(r==4.0 && p.y>1.56) {
+          float hairline=1.755+0.025*cos(p.x*25.0);
+          if(p.y>hairline || (p.z<0.005 && p.y>1.66)) kit=uHair;
+          if(p.z>0.065 && p.y<1.755) {
+            float eyes=1.0-smoothstep(0.009,0.017,length(vec2(abs(p.x)-0.046,(p.y-1.699)*1.2)));
+            kit=mix(kit,vec3(0.025,0.035,0.05),eyes);
+            float brow=(1.0-smoothstep(0.007,0.012,abs(p.y-1.727)))*(1.0-smoothstep(0.02,0.032,abs(abs(p.x)-0.047)));
+            kit=mix(kit,uHair,brow);
+            float mouth=(1.0-smoothstep(0.004,0.009,abs(p.y-1.632)))*(1.0-smoothstep(0.025,0.04,abs(p.x)));
+            kit=mix(kit,uSkin*0.4,mouth);
+          }
+        }
+        if(r==0.0 && abs(p.x)<0.2 && p.y>1.04 && p.y<1.48 && p.z< -0.045) {
+          vec4 badge=texture2D(uMark,vec2(0.5-p.x/0.4,(p.y-1.04)/0.44));
+          kit=mix(kit,badge.rgb,badge.a);
+        }
+        // Gold captain band, boot toe panels and sock/shin-pad seams.
+        if(r==0.0 && p.x< -0.30 && p.x> -0.39)kit=vec3(0.95,0.63,0.14);
+        if(r==3.0 && p.z>0.08)kit=mix(uBoots,vec3(0.04,0.06,0.09),0.75);
+        if(r==2.0 && p.y<0.39 && p.y>0.19 && p.z>0.03)kit*=0.86;
+        if (uJoint > 0.5) kit *= 0.9;                         // joint caps read as seams/shading
         vec4 diffuseColor = vec4( kit, opacity );`);
   };
-  mat.customProgramCacheKey = () => `kit-${regions.length}-${isJoint ? 1 : 0}`;
+  mat.customProgramCacheKey = () => `identity-kit-${regions.length}-${isJoint ? 1 : 0}`;
   return mat;
+}
+
+function makeNameplate() {
+  const c=document.createElement('canvas');c.width=256;c.height=384;
+  const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t;
 }

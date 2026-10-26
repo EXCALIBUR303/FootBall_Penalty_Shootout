@@ -17,5 +17,5 @@ export function createNetRipple(goal) {
         transformed+=inverse(mat3(modelMatrix))*vec3(0.,0.,pulse);`);
     };o.material.customProgramCacheKey=()=> 'net-ripple-v1';
   });
-  return {hit(p){impact.value.copy(p);time.value=0;strength.value=0.22;},reset(){strength.value=0;},update(dt,reduced){time.value+=dt;if(reduced)strength.value=0;}};
+  return {get active(){return time.value<1.4 && strength.value>0;},hit(p){impact.value.copy(p);time.value=0;strength.value=0.22;},reset(){strength.value=0;},update(dt,reduced){time.value+=dt;if(reduced)strength.value=0;}};
 }

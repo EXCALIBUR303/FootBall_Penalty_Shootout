@@ -4,9 +4,9 @@
 // would glow on the pitch). Patterns: plain | stripes | hoops | sash (see src/world/kit.js).
 export const TEAMS = [
   { id: 'lions', name: 'Blue Lions', short: 'LIO', color: '#5b9cff',
-    kit: { shirt: '#1f58c9', trim: '#f4f5f7', shorts: '#f4f5f7', socks: '#1f58c9', pattern: 'plain' } },
+    kit: { shirt: '#1855ad', shirt2: '#23477f', trim: '#e8b95d', shorts: '#101e39', socks: '#1855ad', pattern: 'stripes' } },
   { id: 'foxes', name: 'Red Foxes', short: 'FOX', color: '#ff6b6b',
-    kit: { shirt: '#c41f2c', shirt2: '#f4f4f4', trim: '#f4f4f4', shorts: '#16171b', socks: '#c41f2c', pattern: 'sash' } },
+    kit: { shirt: '#a52b40', shirt2: '#e4b87b', trim: '#e4b87b', shorts: '#16171b', socks: '#c41f2c', pattern: 'sash' } },
   { id: 'hornets', name: 'Gold Hornets', short: 'HOR', color: '#ffc83d',
     kit: { shirt: '#eeb21a', shirt2: '#17171b', trim: '#17171b', shorts: '#17171b', socks: '#eeb21a', pattern: 'hoops' } },
   { id: 'sharks', name: 'Teal Sharks', short: 'SHA', color: '#2ee6a8',
@@ -19,4 +19,4 @@ export const TEAMS = [
 export const team = (id) => TEAMS.find((t) => t.id === id) ?? TEAMS[0];
 
 /** Keeper kit: volt with long sleeves and gloves — no outfield kit uses it, so the keeper always stands out. */
-export const KEEPER_KIT = { shirt: '#c4dc2c', trim: '#1a1c21', shorts: '#1a1c21', socks: '#c4dc2c', gloves: '#f3f4f1', longSleeves: true, pattern: 'plain' };
+export const KEEPER_KIT = { shirt: '#8fae30', trim: '#1a1c21', shorts: '#1a1c21', socks: '#8fae30', gloves: '#f3f4f1', longSleeves: true, pattern: 'plain' };

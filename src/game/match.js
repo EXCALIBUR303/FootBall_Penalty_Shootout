@@ -51,6 +51,7 @@ export async function createMatch({ world, canvas, params, options = {}, setting
   const hud = createHud(teams);
   const input = createInput(canvas, camera);
   const fx = createEffects(world.scene, { low: get('quality', 'high') === 'low' });
+  fx.reducedMotion=get('reducedMotion',false);
   const recorder = new Recorder([keeper.root, striker.root, ball]);
   let recording = false;
   let recT = 0;
@@ -61,7 +62,7 @@ export async function createMatch({ world, canvas, params, options = {}, setting
   world.kits.keeper?.set(KEEPER_KIT);
 
   const unsubscribe = settings?.subscribe((k, v) => {
-    if (k === 'reducedMotion') director.reducedMotion = v;
+    if (k === 'reducedMotion') { director.reducedMotion = v;fx.reducedMotion=v; }
     if (k === 'hints') refreshPrompt();
     if (k === 'quality') fx.low = v === 'low';
   });
@@ -113,11 +114,12 @@ export async function createMatch({ world, canvas, params, options = {}, setting
     recording = false;
     slow = null;
     fx.clear();
+    world.net.reset();
 
     const who = mode === '1p'
       ? (team === 'home' ? 'Your kick' : "You're in goal")
       : `${team === 'home' ? 'Player 1' : 'Player 2'} to shoot`;
-    hud.turn(who, team, teams[team].name);
+    hud.turn(who, team, teams[team].name, !shooterHuman);
 
     if (shooterHuman) {
       aim.x = 0; aim.y = 1.2;
@@ -152,6 +154,7 @@ export async function createMatch({ world, canvas, params, options = {}, setting
     kick.shot = shot;
     kick.launch = { position: SPOT.clone(), velocity, spin };
     recorder.mark('strike');
+    fx.divot(SPOT);
     onEvent('strike', { power: shot.power, x: shot.target.x });
     setPhase('flight');
     director.cut(SHOTS.follow(() => ball.position));
@@ -193,9 +196,8 @@ export async function createMatch({ world, canvas, params, options = {}, setting
   function resultTitle(outcome) {
     if (outcome === 'goal') return 'Goal';
     if (outcome === 'saved') return 'Saved';
-    if (outcome === 'post') return kick.woodworkType === 'bar' ? 'Off the bar' : 'Off the post';
-    const p = physics.ball.translation();
-    return p.y > GOAL.height && Math.abs(p.x) < GOAL.halfWidth + 1 ? 'Over the bar' : 'Wide';
+    if (outcome === 'post') return 'Missed';
+    return 'Missed';
   }
   /** Caption sub-line: a detail for saves, then the score. */
   function resultSub(outcome) {
@@ -295,6 +297,8 @@ export async function createMatch({ world, canvas, params, options = {}, setting
 
   // --- Physics events -----------------------------------------------------------------------
   function onPhysicsEvent(e) {
+    // The whole ball scores before it reaches the net collider; net impacts still matter in result.
+    if(e.type==='net' && kick && ['flight','result'].includes(phase)){world.net.hit(ball.position);onEvent('net',{speed:e.speed});return;}
     if (!kick || kick.outcome || phase !== 'flight') return;
     if (e.type === 'post' || e.type === 'bar') {
       kick.woodwork = true;
@@ -309,8 +313,6 @@ export async function createMatch({ world, canvas, params, options = {}, setting
       const catchBelow = kick.keeperHuman ? DIFFICULTY.normal.catchBelow : ai.catchBelow;
       if (e.speed < catchBelow) kick.held = true;
       onEvent('keeper-touch', { held: kick.held, speed: e.speed, x: ball.position.x });
-    } else if (e.type === 'net') {
-      onEvent('net', { speed: e.speed });
     }
   }
 
