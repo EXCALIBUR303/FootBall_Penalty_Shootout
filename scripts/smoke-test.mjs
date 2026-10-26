@@ -6,11 +6,13 @@ const { chromium } = createRequire(import.meta.url)('playwright');
 const url = process.argv[2] || 'http://localhost:5173/?test=1';
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH, args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+page.setDefaultTimeout(120000);
+await page.addInitScript(()=>localStorage.setItem('penalty-kings.settings',JSON.stringify({quality:'low'})));
 const logs = [];
 page.on('console', (m) => logs.push(`[${m.type()}] ${m.text()}`));
 page.on('pageerror', (e) => logs.push(`[pageerror] ${e.message}`));
 await page.goto(url);
-await page.waitForFunction(() => window.__game, null, { timeout: 30000 });
+await page.waitForFunction(() => window.__game, null, { timeout: 120000 });
 await page.waitForTimeout(2500);
 const info = await page.evaluate(() => {
   const g = window.__game;

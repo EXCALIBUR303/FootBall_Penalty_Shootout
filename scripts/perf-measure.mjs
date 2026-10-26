@@ -5,7 +5,8 @@
 import { createRequire } from 'node:module';
 const { chromium } = createRequire(import.meta.url)('playwright');
 const port = process.env.PORT || 5173;
-const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH, args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });
+const hardware=process.env.HARDWARE==='1';
+const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH, headless:!hardware, args: hardware?[]:['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });
 const out = [];
 for (const quality of ['high', 'low']) {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 });
@@ -19,9 +20,11 @@ for (const quality of ['high', 'low']) {
       times.push(now - last); last = now;
       if (now - t0 < 12000) requestAnimationFrame(tick); else {
         const info = window.__game.renderer.info;
+        const gl=window.__game.renderer.getContext(),ext=gl.getExtension('WEBGL_debug_renderer_info');
+        const device=ext?gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER);
         times.sort((a, b) => a - b);
         resolve({
-          frames: times.length,
+          device, frames: times.length,
           meanMs: +(times.reduce((a, b) => a + b, 0) / times.length).toFixed(1),
           p95Ms: +times[Math.floor(times.length * 0.95)].toFixed(1),
           calls: info.render.calls, tris: info.render.triangles,
@@ -33,6 +36,7 @@ for (const quality of ['high', 'low']) {
     };
     requestAnimationFrame(tick);
   }));
+  if(hardware && /swiftshader|llvmpipe|software/i.test(r.device)){console.error('Hardware requested but the browser is using software rendering:',r.device);process.exitCode=1;}
   out.push({ label: process.env.LABEL || '', quality, ...r });
   await page.close();
 }

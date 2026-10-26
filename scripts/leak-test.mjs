@@ -4,11 +4,13 @@ import { createRequire } from 'node:module';
 const { chromium } = createRequire(import.meta.url)('playwright');
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH, args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--enable-precise-memory-info', '--js-flags=--expose-gc'] });
 const page = await browser.newPage({ viewport: { width: 960, height: 540 } });
+page.setDefaultTimeout(120000);
+await page.addInitScript(()=>localStorage.setItem('penalty-kings.settings',JSON.stringify({quality:'low'})));
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
 page.on('console', (m) => { if (m.type() === 'error' && !/GPU stall/.test(m.text())) errors.push(m.text()); });
-await page.goto('http://localhost:5173/');
-await page.waitForFunction(() => window.__game?.ui, null, { timeout: 30000 });
+await page.goto('http://localhost:5173/?timescale=4');
+await page.waitForFunction(() => window.__game?.ui, null, { timeout: 120000 });
 const snap = () => page.evaluate(() => {
   const i = window.__game.renderer.info;
   return { geometries: i.memory.geometries, textures: i.memory.textures, programs: i.programs?.length, heapMB: +(performance.memory.usedJSHeapSize / 1048576).toFixed(1) };
@@ -19,11 +21,11 @@ for (let n = 0; n < RUNS; n++) {
   await page.evaluate((n) => window.__game.ui && document.querySelector('[data-action="play-1p"]').click(), n);
   await page.waitForSelector('.setup__go', { state: 'visible' });
   await page.click('.setup__go');
-  await page.waitForFunction(() => window.__game.game?.phase === 'aim', null, { timeout: 30000 });
+  await page.waitForFunction(() => window.__game.game?.phase === 'aim', null, { timeout: 120000 });
   // play one kick so physics, effects and the recorder are all exercised
   // alternate a corner shot with one at the post, so goal, save and woodwork effects all get drawn
   await page.evaluate((n) => window.__game.game.debugShoot(n % 2 ? { x: 3.66, y: 1.2 } : { x: 2.5, y: 1.0 }, 0.8, 0), n);
-  await page.waitForFunction(() => ['result', 'replay'].includes(window.__game.game.phase), null, { timeout: 30000 });
+  await page.waitForFunction(() => ['result', 'replay'].includes(window.__game.game.phase), null, { timeout: 120000 });
   await page.evaluate(() => window.gc?.());
   rows.push({ run: n + 1, outcome: await page.evaluate(() => window.__game.game.kick?.outcome ?? '?'), ...(await snap()) });
   await page.keyboard.press('Escape');

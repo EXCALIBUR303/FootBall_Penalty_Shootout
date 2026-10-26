@@ -92,4 +92,5 @@ await g(async () => {
 await page.waitForSelector('[data-dialog="end"]:not([hidden])', { timeout: 60000 });
 await shot('14-end', 800);
 console.log('errors', errors.length ? errors : 'none');
+if(errors.length)process.exitCode=1;
 await browser.close();
