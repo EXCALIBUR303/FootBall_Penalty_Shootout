@@ -2,12 +2,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { GOAL } from '../game/shot.js';
 
-/**
- * Painted pitch markings around the goal we play on, to Laws of the Game dimensions (metres, pitch space:
- * goal line z = 0, field towards +z). The projected stadium photo has no lines at our end, so without these
- * the penalty spot and box are invisible. They are paint, not props: thin flat strips merged into one mesh
- * (one draw call) that receive the players' shadows.
- */
+/** Sharp painted markings on the authored 68 × 105 m pitch, merged into one draw call. */
 export const MARKINGS = {
   line: 0.12, // line width
   halfWidth: 34, // goal line runs the width of a 68 m pitch
@@ -42,6 +37,10 @@ export function addPitchMarkings(scene) {
   parts.push(new THREE.CircleGeometry(M.spot.radius, 24).rotateX(-Math.PI / 2).translate(0, 0, M.spot.z));
   const outside = Math.acos((M.penaltyArea.depth - M.spot.z) / M.arcRadius); // half-angle of the visible arc
   parts.push(arcGeometry(0, M.spot.z, M.arcRadius, w, -outside, outside));
+  parts.push(arcGeometry(0,105-M.spot.z,M.arcRadius,w,Math.PI-outside,Math.PI+outside));
+  for(const z of [52.5,105-M.spot.z])parts.push(new THREE.CircleGeometry(M.spot.radius,24).rotateX(-Math.PI/2).translate(0,0,z));
+  for(const [x,z,a0,a1]of [[-34,0,0,Math.PI/2],[34,0,-Math.PI/2,0],[-34,105,Math.PI/2,Math.PI],[34,105,Math.PI,Math.PI*1.5]])parts.push(arcGeometry(x,z,1,w,a0,a1,20));
+
 
   const geometry = mergeGeometries(parts.map((g) => g.toNonIndexed()));
   parts.forEach((g) => g.dispose());

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { fitPortraitFov } from './framing.js';
 
 /**
  * Camera director: each shot is a function returning where the camera wants to be this frame
@@ -54,8 +55,9 @@ export class Director {
       this.shake *= Math.exp(-8 * dt);
     }
     cam.lookAt(this.target);
-    if (Math.abs(cam.fov - this.fov) > 0.01) {
-      cam.fov = this.fov;
+    const projectedFov=fitPortraitFov(this.fov,cam.aspect);
+    if (Math.abs(cam.fov - projectedFov) > 0.01) {
+      cam.fov = projectedFov;
       cam.updateProjectionMatrix();
     }
   }

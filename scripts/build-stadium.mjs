@@ -20,9 +20,9 @@ function box(key, x,y,z, w,h,d, ry=0) { add(key, new T.BoxGeometry(w,h,d).rotate
 function pole(key, x,y,z, radius,height) { add(key, new T.CylinderGeometry(radius,radius,height,6).translate(x,y,z)); }
 // The complete 68 x 105 m pitch is in the imported stadium, including crisp mowing bands.
 box('apron',0,-0.22,52.5,100,0.35,137);
-for(let i=0;i<20;i++) box(i%2?'turfA':'turfB',0,-0.045,2.625+i*5.25,68,0.06,5.25);
+for(let i=0;i<20;i++) box(i%2?'turfA':'turfB',0,-0.03,2.625+i*5.25,68,0.06,5.25);
 
-// Shared stand coordinates exported below are mirrored by crowd.js. Two tiers, aisles and tunnel gap.
+// Stand coordinates are mirrored by crowd.js. Two tiers, aisles and tunnel gap.
 for(const end of [0,1]) {
   for(let row=0;row<24;row++) {
     const tier=row>=12?2:0, y=1.2+row*0.65+tier;

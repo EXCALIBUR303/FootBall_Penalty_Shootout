@@ -24,7 +24,7 @@ export const KIT = { keeper: 0xc6f432, home: 0x5b9cff, away: 0xff8a3d };
 export function buildScene(renderer, assets) {
   const scene = new THREE.Scene();
 
-  // --- Stadium backdrop (projected photo) + image-based lighting ------------------------------
+  // --- Imported night arena, crowd, ribbons and painted pitch -------------------------------
   const env = buildEnvironment(renderer, scene, assets);
   addPitchMarkings(scene);
 

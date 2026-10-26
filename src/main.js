@@ -14,6 +14,7 @@ import { createUI } from './ui/ui.js';
 import { createAudio } from './audio/audio.js';
 import { createPerf } from './core/perf.js';
 import { toast } from './ui/toast.js';
+import { fitPortraitFov } from './camera/framing.js';
 import './styles/broadcast.css';
 
 const loadingEl = document.getElementById('loading');
@@ -159,7 +160,8 @@ async function boot() {
     const a = 0.20 + Math.sin(menuT * 0.06) * 0.16;
     camera.position.set(Math.sin(a)*38, 5.5 + Math.sin(menuT*0.11)*0.2, 6+Math.cos(a)*38);
     camera.lookAt(0, 7.0, -5);
-    if (camera.fov !== 48) { camera.fov = 48; camera.updateProjectionMatrix(); }
+    const menuFov=fitPortraitFov(48,camera.aspect);
+    if (camera.fov !== menuFov) { camera.fov = menuFov; camera.updateProjectionMatrix(); }
   }
 
   loadingEl.classList.add('is-done');

@@ -109,3 +109,27 @@ Each entry records the decision, alternatives, reason, and reversal. No web cont
 - Alternatives: leave old guidance claiming the stadium is missing and the photo/HDR pipeline still ships; alter the general imported-model requirement.
 - Why: future work should not accidentally restore the rejected photo backdrop or remove stadium geometry on Low. The general model/dependency rules remain in force; this records the user’s existing exception.
 - Reverse: restore the previous working-notes sections from Git. README/docs remain the implementation reference.
+
+## 19. Deterministic layout snapshots
+- Decision: layout-check keeps actual DOM/game updates running but draws the real 3D scene once per capture instead of continuously between static layout assertions. It still captures every screen at all nine resolutions and checks overflow, bounds and overlaps.
+- Alternatives: spend most layout-test time rendering unchanged backgrounds; remove large viewports; use mocked screenshots.
+- Why: layout checks measure DOM geometry, while visual-qa, leak-test and perf-measure independently cover continuous rendering. Single-frame captures are real renderer output and keep the nine-resolution test practical in SwiftShader.
+- Reverse: remove the test-only post.render override and explicit render calls in layout-check.mjs.
+
+## 20. Portrait gameplay framing
+- Decision: preserve at least the horizontal field of a 1.1-aspect view by widening vertical FOV on portrait screens, capped at 85 degrees. Apply only at final projection, retaining authored base FOVs/springs, camera positions and all landscape shots. Use the same rule for the live menu.
+- Alternatives: crop the striker/posts and let the power panel cover the ball; move DOM controls across the goal; move cameras outside the pitch.
+- Why: real phone captures exposed cropped play geometry despite valid DOM bounds. Projection tests now require both posts, striker and ball to fit, keep the ball above the lower power panel, and verify portrait-to-landscape resizing leaves camera positions unchanged.
+- Reverse: remove fitPortraitFov from Director/menu projection; landscape behavior is already unchanged.
+
+## 21. Complete paint and ground contact
+- Decision: complete far-end penalty arc/spot, centre spot and four corner arcs, and put the authored turf surface at y=0 (paint at y=0.004), matching the physics floor and player feet.
+- Alternatives: leave scenic far-end/corner markings incomplete; keep a 1.5 cm gap between the visual grass and the physics floor.
+- Why: a proper pitch should be complete even outside the playable penalty end. All paint remains one merged draw; the small static triangle increase does not change match logic or resource lifetimes.
+- Reverse: revert the additional paint parts and turf-height change; rebuild the stadium GLB.
+
+## 22. Hardware measurement entry point
+- Decision: add HARDWARE=1 to perf-measure for a headed desktop Chromium run, report the actual WebGL device, and reject software fallback when hardware is requested. Retain the standard SwiftShader path for reproducible cloud comparisons.
+- Alternatives: claim 60 fps from software timings; hide the slow software results; change physics throughput to make a benchmark look fast.
+- Why: the current environment provides software-rendered evidence, not a verified normal-GPU acceptance result. The exact hardware command makes the remaining check concrete without pretending it has passed.
+- Reverse: remove the optional headed path and device-report fields in perf-measure.mjs.

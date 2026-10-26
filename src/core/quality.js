@@ -1,7 +1,6 @@
 // Quality presets. Phase 4 adds post-processing toggles; the shape is here so later code just reads it.
 const PRESETS = {
-  // anisotropy: filtering of the stadium backdrop, which is also the pitch seen at a grazing angle. It keeps the
-  // far grass sharp, but frame cost grows with it (measured roughly linear in software GL), so Low uses 2x.
+  // Turf grain and ribbon filtering at grazing angles. Low uses 2x to reduce sampler cost.
   high: { maxDpr: 2, shadowMap: 2048, bloom: true, anisotropy: 8 },
   low: { maxDpr: 1, shadowMap: 1024, bloom: false, anisotropy: 2 },
 };
