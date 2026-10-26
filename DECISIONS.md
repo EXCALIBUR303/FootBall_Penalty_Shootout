@@ -85,3 +85,27 @@ Each entry records the decision, alternatives, reason, and reversal. No web cont
 - Alternatives: terminate all Chromium processes; leave abandoned QA renders consuming CPU.
 - Why: automatic approval review rejected a broad Chromium cleanup because it could affect unrelated browser sessions. Exact ownership checks allow a safer task-scoped cleanup without requesting approval or disturbing unrelated sessions.
 - Reverse: rerun the documented QA command; only temporary test sessions were closed.
+
+## 15. Short-window setup layout
+- Decision: compact the setup form on short desktop/landscape windows and use safe centring so overflowing forms start at a reachable top edge.
+- Alternatives: allow the kick-off button and header to be clipped; hide kit previews; reduce touch targets below 44 px.
+- Why: a 960×540 screenshot exposed an oversized setup card. Smaller decorative spacing/previews and hidden difficulty descriptions preserve the full interaction and button sizes.
+- Reverse: remove the final short-window rules in broadcast.css; form controls and game state are unchanged.
+
+## 16. Balanced Low crowd distribution
+- Decision: deterministically permute spectator placements before selecting the Low prefix, rather than take a fixed stride through paired stand placements. Add a runtime lower-stand population check for all four sides.
+- Alternatives: keep the stride (which aliases with near/far and west/east pairs); render the full High crowd on Low; remove architectural sections.
+- Why: a replay screenshot showed empty lower sections despite the correct total count. Balanced selection preserves 2,400 spectators and the same draw/memory budget while populating every lower stand.
+- Reverse: replace the permutation with another balanced selection algorithm. Restoring the old stride reintroduces visible empty sections.
+
+## 17. Separate functional timing from visual frame cost in QA
+- Decision: non-screenshot play-test and AI balance checks keep game/physics updates but skip drawing after the loaded scene is checked. UI tour restores drawing for every capture and only skips it during the remaining full-match completion loop. Leak tests keep real drawing and use the existing dev timescale=4 hook. Full visual-qa, responsive/layout checks, leak and performance measurement retain actual rendering.
+- Alternatives: run every logical kick through slow software drawing; infer hardware FPS from test throughput; drop end-of-match checks.
+- Why: the full rendered walkthrough passed, including the end screen and zero browser errors, but took many minutes on SwiftShader. Functional and AI tests do not measure rendering; this change keeps their real state-machine/physics checks practical without weakening visual/leak/performance coverage.
+- Reverse: remove the test-only post.render overrides and dev timescale in the QA scripts. The shipping game loop is unchanged.
+
+## 18. Keep repository guidance current
+- Decision: update CLAUDE.md working notes to describe the shipped night arena, the explicitly approved offline stadium-authoring exception, preserved imported actors, and current QA entry points.
+- Alternatives: leave old guidance claiming the stadium is missing and the photo/HDR pipeline still ships; alter the general imported-model requirement.
+- Why: future work should not accidentally restore the rejected photo backdrop or remove stadium geometry on Low. The general model/dependency rules remain in force; this records the user’s existing exception.
+- Reverse: restore the previous working-notes sections from Git. README/docs remain the implementation reference.

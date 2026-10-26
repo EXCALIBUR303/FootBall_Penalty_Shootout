@@ -19,7 +19,9 @@ export function createCrowd(scene, template) {
     }
   }
   // Spread the first quarter over every stand so Low never drops an entire seating section.
-  const ordered=[]; for(let k=0;k<4;k++) for(let i=k;i<placements.length;i+=4) ordered.push(placements[i]);
+  // A fixed-stride prefix aliases with the paired near/far and west/east placements.
+  // A deterministic permutation keeps the Low prefix evenly spread across all rows and stands.
+  const ordered=placements.map((p,i)=>({p,key:Math.imul(i+1,2654435761)>>>0})).sort((a,b)=>a.key-b.key).map(o=>o.p);
   const time={value:0}, cheer={value:0}, motion={value:1};
   const mat=new T.MeshStandardMaterial({roughness:1,metalness:0});
   mat.onBeforeCompile=shader=>{

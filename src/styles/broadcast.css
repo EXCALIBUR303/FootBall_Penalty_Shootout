@@ -52,7 +52,7 @@
 .reduce-motion .turn.is-shown{animation:none;opacity:1;transform:none;}
 /* Short laptop/landscape windows keep the entire wordmark, controls and key hints in view. */
 @media(max-height:640px) and (min-width:561px){
- .screen--menu{align-content:center;padding-top:18px;padding-bottom:56px;}
+ .screen--menu{align-content:safe center;padding-top:18px;padding-bottom:56px;}
  .menu{gap:14px;width:min(390px,48vw);}.wordmark{--fs-hero:3.4rem;}.menu__tag{font-size:0.9rem;margin:0;}
  .menu__nav{gap:5px;}.menu__item{padding:8px 14px;}.menu__label{font-size:1rem;}.menu__hint{font-size:0.72rem;}
  .btn--hero{min-height:64px;padding:12px 18px;margin-bottom:5px;}.btn__title{font-size:1.4rem;}.btn__sub{font-size:0.72rem;}
@@ -62,3 +62,13 @@
  .team-card__kit-label{display:none;}.team-card__badge{height:auto;}.team-card__badge .shirt{width:56px;height:56px;}
 }
 @media(max-width:560px){.team-card__badge .shirt{width:44px;height:44px;}}
+/* Overflow aligns to the start so tall forms never hide their own header. */
+.screen--setup { place-items:safe center; }
+@media(max-height:640px) and (min-width:861px){
+ .screen--setup{padding:16px;}.setup{padding:16px;gap:14px;}.setup__title{font-size:1.8rem;}
+ .team-card{padding:12px;gap:8px;}.team-card__badge{height:56px;}.team-card__badge .shirt{width:56px;height:56px;}.team-card__kit-label{display:none;}
+ .diff__desc{display:none;}.diff__card{padding:10px 12px;}.setup__go{min-height:48px;}.setup__note{font-size:0.75rem;}
+ .screen--menu{align-content:safe center;}
+}
+
+@media(max-height:420px) and (min-width:561px){.screen--menu{padding-bottom:16px;}.screen__keys{display:none;}}
